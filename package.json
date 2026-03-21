@@ -1,0 +1,27 @@
+{
+  "name": "signalnest-monorepo",
+  "version": "1.0.0",
+  "description": "SignalNest - Personal event aggregation and notification system",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "server": "cd signalnest-server && node src/index.js",
+    "server:dev": "cd signalnest-server && node --watch src/index.js",
+    "server:install": "cd signalnest-server && pnpm install",
+    "app": "bash build.sh debug",
+    "app:release": "bash build.sh release",
+    "app:clean": "bash build.sh clean",
+    "build": "bash build.sh debug",
+    "build:server": "pnpm run server:install",
+    "build:app": "bash build.sh debug",
+    "clean": "bash build.sh clean",
+    "dev": "pnpm run server:dev"
+  },
+  "keywords": ["notifications", "websocket", "android", "kotlin", "express", "monorepo"],
+  "author": "UnTamedFury",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18",
+    "pnpm": ">=8"
+  }
+}

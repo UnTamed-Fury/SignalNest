@@ -1,0 +1,45 @@
+SignalNest Source License v1.0
+Copyright (c) 2025 UnTamedFury. All rights reserved.
+
+DEFINITIONS
+  "Software" means the SignalNest source code, binaries, documentation, and
+  all associated files in this repository.
+  "You" means the individual or entity exercising rights under this license.
+  "Commercial Use" means any use primarily intended for commercial advantage
+  or monetary compensation, including but not limited to SaaS products,
+  paid apps, enterprise internal tooling, or consulting deliverables.
+  "Fork" means any derivative work that includes substantial portions of the
+  Software's source code.
+
+GRANT OF RIGHTS — PERSONAL USE
+  You may use, copy, modify, and run the Software for personal, non-commercial
+  purposes at no charge, provided that:
+  a) This license notice is retained in all copies or substantial portions.
+  b) Credit is given to UnTamedFury in any public-facing About/credits page.
+
+COMMERCIAL USE RESTRICTION
+  Commercial Use of the Software — whether modified or unmodified — requires
+  a written commercial license agreement with UnTamedFury prior to use.
+  Contact the author to obtain a commercial license.
+
+FORKING & DERIVATIVES
+  Any Fork of the Software must:
+  a) Clearly attribute the original work: "Based on SignalNest by UnTamedFury"
+     in the project README and any About/credits page.
+  b) Retain this license file unmodified.
+  c) If the Fork is used for Commercial Use, obtain a commercial license as
+     described above. This obligation applies to both direct forks and forks
+     of forks.
+
+NO WARRANTY
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+  OR IMPLIED. IN NO EVENT SHALL UNTAMEDFURY BE LIABLE FOR ANY CLAIM, DAMAGES,
+  OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+ENFORCEMENT
+  UnTamedFury reserves the right to pursue legal action against any party
+  that uses the Software in violation of this license, including but not
+  limited to Commercial Use without a license agreement, removal of
+  attribution, or distribution of the Software under a different license.
+
+Contact: see repository for current contact information.

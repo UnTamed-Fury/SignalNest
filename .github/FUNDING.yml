@@ -1,0 +1,33 @@
+# Funding
+
+If you find this project helpful and would like to support its development, here are ways you can contribute:
+
+## 💝 Support Options
+
+### Code Contributions
+- Fix bugs
+- Add new features
+- Improve documentation
+- Review pull requests
+
+### Non-Code Contributions
+- Report bugs with detailed information
+- Suggest feature improvements
+- Help other users in discussions
+- Share the project with others
+
+### Financial Support
+Currently, we don't have a financial sponsorship program. If you'd like to contribute financially, consider:
+- Supporting the maintainers directly (if they have sponsorship links)
+- Donating to open source projects we depend on:
+  - [Jetpack Compose](https://developer.android.com/jetpack)
+  - [Kotlin](https://kotlinlang.org/)
+  - [Node.js](https://nodejs.org/)
+
+## 🙏 Thank You
+
+Every contribution, no matter how small, helps make this project better!
+
+---
+
+**Note:** This project is licensed under ISC License, which means you can use it freely for personal and commercial projects.

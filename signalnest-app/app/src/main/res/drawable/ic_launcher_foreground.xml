@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Signal/wave icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,36c-4.4,0 -8,3.6 -8,8s3.6,8 8,8s8,-3.6 8,-8S58.4,36 54,36z"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,24c-11,0 -20,9 -20,20s9,20 20,20s20,-9 20,-20S65,24 54,24z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,12c-17.7,0 -32,14.3 -32,32s14.3,32 32,32s32,-14.3 32,-32S71.7,12 54,12z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFF"/>
+    <!-- Nest/house shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,52l-16,12v16h32V64L54,52z"/>
+</vector>

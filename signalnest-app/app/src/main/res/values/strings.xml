@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SignalNest</string>
+    <string name="notif_ch_events">Events</string>
+    <string name="notif_ch_silent">Silent Events</string>
+    <string name="notif_ch_service">Connection</string>
+    <string name="notif_ch_alarms">Todo Reminders</string>
+</resources>
