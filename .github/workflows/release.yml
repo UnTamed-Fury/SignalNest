@@ -1,0 +1,218 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   # triggers on tags like v1.0.0, v1.2.3-beta, etc.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version tag (e.g. v1.0.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write   # needed to create releases
+
+jobs:
+  build-release:
+    name: Build & publish release
+    runs-on: ubuntu-latest
+
+    env:
+      # Signing — set these as encrypted secrets in your repo settings:
+      #   KEYSTORE_BASE64    → base64-encoded .jks file  (openssl base64 -in key.jks)
+      #   KEYSTORE_PASSWORD  → store password
+      #   KEY_ALIAS          → key alias
+      #   KEY_PASSWORD       → key password
+      KEYSTORE_FILE: ${{ github.workspace }}/signalnest-release.jks
+
+    steps:
+      # ── Checkout ─────────────────────────────────────────────────────────────
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for changelog generation
+
+      # ── Java ─────────────────────────────────────────────────────────────────
+      - uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: temurin
+
+      # ── Gradle cache ─────────────────────────────────────────────────────────
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      # ── Decode keystore from secret ──────────────────────────────────────────
+      - name: Decode keystore
+        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
+
+      # ── Determine version ─────────────────────────────────────────────────────
+      - name: Set version
+        id: version
+        run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          VERSION="${TAG#v}"          # strip leading "v"
+          echo "tag=$TAG"            >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"    >> "$GITHUB_OUTPUT"
+          # Numeric versionCode: turn 1.2.3 → 10203
+          CODE=$(echo "$VERSION" | awk -F'[.-]' '{printf "%d%02d%02d", $1, $2, $3}')
+          echo "code=$CODE"          >> "$GITHUB_OUTPUT"
+
+      # ── Patch versionName + versionCode into build.gradle.kts ────────────────
+      - name: Patch version in build.gradle.kts
+        run: |
+          sed -i "s/versionCode\s*=\s*[0-9]*/versionCode   = ${{ steps.version.outputs.code }}/" \
+            signalnest-app/app/build.gradle.kts
+          sed -i "s/versionName\s*=\s*\"[^\"]*\"/versionName   = \"${{ steps.version.outputs.version }}\"/" \
+            signalnest-app/app/build.gradle.kts
+
+      # ── Build all 5 APKs ─────────────────────────────────────────────────────
+      - name: Build release APKs (5 splits)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd signalnest-app
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            --no-daemon \
+            --parallel \
+            --build-cache \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+
+      # ── Collect + rename APKs ─────────────────────────────────────────────────
+      - name: Collect APKs
+        id: apks
+        run: |
+          APK_DIR="signalnest-app/app/build/outputs/apk/release"
+          DEST="release-apks"
+          mkdir -p "$DEST"
+          V="${{ steps.version.outputs.version }}"
+
+          # Map each output filename to a clean name
+          declare -A MAP=(
+            ["arm64-v8a"]="signalnest-v${V}-arm64-v8a.apk"
+            ["armeabi-v7a"]="signalnest-v${V}-armeabi-v7a.apk"
+            ["x86_64"]="signalnest-v${V}-x86_64.apk"
+            ["x86"]="signalnest-v${V}-x86.apk"
+            ["universal"]="signalnest-v${V}-universal.apk"
+          )
+
+          for ABI in "${!MAP[@]}"; do
+            SRC=$(find "$APK_DIR" -name "*${ABI}*" -o -name "*universal*" 2>/dev/null | \
+              grep -i "${ABI}" | head -1)
+            if [ -n "$SRC" ]; then
+              cp "$SRC" "$DEST/${MAP[$ABI]}"
+              echo "✓ ${MAP[$ABI]}"
+            fi
+          done
+
+          ls -lh "$DEST"
+
+      # ── Compute SHA-256 for every APK ─────────────────────────────────────────
+      - name: Generate SHA-256 checksums
+        id: sha
+        run: |
+          cd release-apks
+          sha256sum *.apk > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          # Also capture as multiline output for the release body
+          {
+            echo "table<<EOF"
+            echo "| File | SHA-256 |"
+            echo "|------|---------|"
+            while read -r hash file; do
+              echo "| \`$file\` | \`$hash\` |"
+            done < SHA256SUMS.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── Build changelog from commits since last tag ───────────────────────────
+      - name: Generate changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            LOG=$(git log "${PREV_TAG}..HEAD" \
+              --pretty=format:"- %s (%h)" \
+              --no-merges \
+              | grep -v "^$" \
+              | head -50)
+          else
+            LOG=$(git log \
+              --pretty=format:"- %s (%h)" \
+              --no-merges \
+              | head -50)
+          fi
+
+          # Escape for GitHub output
+          {
+            echo "log<<EOF"
+            echo "$LOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── Create GitHub Draft Release ───────────────────────────────────────────
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "SignalNest ${{ steps.version.outputs.version }}"
+          draft: true         # always draft — promote manually in GitHub UI
+          prerelease: false
+          body: |
+            ## SignalNest ${{ steps.version.outputs.version }}
+
+            ### What's new
+            ${{ steps.changelog.outputs.log }}
+
+            ---
+
+            ### Downloads
+
+            | APK | Architecture | Notes |
+            |-----|-------------|-------|
+            | `signalnest-v${{ steps.version.outputs.version }}-arm64-v8a.apk`   | ARM64 (v8a)   | Modern phones (recommended) |
+            | `signalnest-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | ARMv7         | Older phones |
+            | `signalnest-v${{ steps.version.outputs.version }}-x86_64.apk`      | x86_64        | Emulator / Intel phones |
+            | `signalnest-v${{ steps.version.outputs.version }}-x86.apk`         | x86           | Old emulator / Intel phones |
+            | `signalnest-v${{ steps.version.outputs.version }}-universal.apk`   | Universal      | All ABIs in one (largest) |
+
+            > **Not sure which to pick?** Use the `arm64-v8a` APK — works on all modern Android phones.
+
+            ---
+
+            ### SHA-256 checksums
+            ${{ steps.sha.outputs.table }}
+
+            <details>
+            <summary>Verify manually</summary>
+
+            ```bash
+            sha256sum -c SHA256SUMS.txt
+            ```
+
+            </details>
+
+            ---
+
+            ### Installation
+            1. Download the APK for your architecture
+            2. Enable "Install from unknown sources" in Android settings
+            3. Open the APK and install
+
+          files: |
+            release-apks/signalnest-v${{ steps.version.outputs.version }}-arm64-v8a.apk
+            release-apks/signalnest-v${{ steps.version.outputs.version }}-armeabi-v7a.apk
+            release-apks/signalnest-v${{ steps.version.outputs.version }}-x86_64.apk
+            release-apks/signalnest-v${{ steps.version.outputs.version }}-x86.apk
+            release-apks/signalnest-v${{ steps.version.outputs.version }}-universal.apk
+            release-apks/SHA256SUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

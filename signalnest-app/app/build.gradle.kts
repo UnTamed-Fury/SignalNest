@@ -38,12 +38,44 @@ android {
             applicationIdSuffix = ".debug"
         }
         release {
-            isMinifyEnabled   = false
-            isShrinkResources = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            isMinifyEnabled   = true   // R8 + ProGuard enabled for release
+            isShrinkResources = true   // strip unused resources too
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             if (System.getenv("KEYSTORE_FILE") != null)
                 signingConfig = signingConfigs.getByName("release")
         }
+    }
+
+    // ── ABI splits — produces: arm64-v8a, armeabi-v7a, x86_64, x86, universal
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
+            isUniversalApk = true   // also build the fat universal APK
+        }
+    }
+
+    // Give each split a unique versionCode so stores accept all of them
+    applicationVariants.all {
+        val variant = this
+        variant.outputs
+            .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
+            .forEach { output ->
+                val abiFilter = output.getFilter(com.android.build.api.variant.FilterConfiguration.FilterType.ABI)
+                val abiCode = when (abiFilter) {
+                    "arm64-v8a"   -> 4
+                    "armeabi-v7a" -> 2
+                    "x86_64"      -> 3
+                    "x86"         -> 1
+                    else          -> 0   // universal
+                }
+                output.versionCodeOverride = variant.versionCode * 10 + abiCode
+                output.outputFileName = "signalnest-${variant.versionName}-${abiFilter ?: "universal"}.apk"
+            }
     }
 
     compileOptions {
@@ -58,7 +90,6 @@ android {
         buildConfig = true
     }
 
-    // FIX 1: composeOptions was missing — this causes a blank/crash build with Kotlin 1.9.20
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.4"
     }
@@ -67,7 +98,6 @@ android {
 }
 
 dependencies {
-    // Compose BOM
     val composeBom = platform("androidx.compose:compose-bom:2024.02.00")
     implementation(composeBom); androidTestImplementation(composeBom)
     implementation("androidx.compose.ui:ui")
@@ -78,7 +108,6 @@ dependencies {
     implementation("androidx.compose.animation:animation")
     implementation("androidx.compose.foundation:foundation")
 
-    // Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -87,32 +116,17 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
 
-    // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    // DataStore
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-
-    // Network
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // JSON (kotlinx-serialization — matches Kotlin 1.9.20)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-
-    // FIX 2: rome:2.1.0 requires Java 11 desktop env — use rometools for Android
-    // The correct Android-compatible RSS library is com.rometools:rome:1.18.0
-    // which works on Android without Java 11 module issues.
     implementation("com.rometools:rome:1.18.0")
-
-    // LAN server
     implementation("org.nanohttpd:nanohttpd:2.3.1")
-
-    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Tests
     testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
