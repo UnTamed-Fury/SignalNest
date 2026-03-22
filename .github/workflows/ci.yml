@@ -15,7 +15,10 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true   # cancel stale runs on new push
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ── Server lint + test ──────────────────────────────────────────────────────
@@ -27,17 +30,17 @@ jobs:
         working-directory: signalnest-server
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "npm"
           cache-dependency-path: signalnest-server/package.json
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
           run_install: |
             - cwd: signalnest-server
 
@@ -50,17 +53,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: temurin
 
-      # Full GitHub Actions cache for Gradle — huge speedup on repeated runs
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-home-cache-cleanup: false   # Disable cleanup to avoid failures when cache service is down
+          gradle-home-cache-cleanup: false
 
       - name: Build debug APK
         run: |
