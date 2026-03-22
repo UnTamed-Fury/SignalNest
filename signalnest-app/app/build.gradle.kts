@@ -22,21 +22,6 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
-    signingConfigs {
-        create("release") {
-            val ks = System.getenv("KEYSTORE_FILE")
-            val kp = System.getenv("KEYSTORE_PASSWORD")
-            val ka = System.getenv("KEY_ALIAS")
-            val kpa = System.getenv("KEY_PASSWORD")
-            if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
-                storeFile     = file(ks)
-                storePassword = kp
-                keyAlias      = ka
-                keyPassword   = kpa
-            }
-        }
-    }
-
     buildTypes {
         debug {
             isMinifyEnabled     = false
@@ -55,7 +40,12 @@ android {
             val ka = System.getenv("KEY_ALIAS")
             val kpa = System.getenv("KEY_PASSWORD")
             if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
-                signingConfig = signingConfigs.getByName("release")
+                signingConfig = signingConfigs.create("release") {
+                    storeFile = file(ks)
+                    storePassword = kp
+                    keyAlias = ka
+                    keyPassword = kpa
+                }
             }
         }
     }
