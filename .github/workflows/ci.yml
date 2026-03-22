@@ -60,7 +60,7 @@ jobs:
       # Full GitHub Actions cache for Gradle — huge speedup on repeated runs
       - uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-home-cache-cleanup: true
+          gradle-home-cache-cleanup: false   # Disable cleanup to avoid failures when cache service is down
 
       - name: Build debug APK
         run: |
