@@ -120,29 +120,4 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
-
-// ── Signing configuration (only when keystore env vars are set) ─────────────
-afterEvaluate {
-    val ks = System.getenv("KEYSTORE_FILE")
-    val kp = System.getenv("KEYSTORE_PASSWORD")
-    val ka = System.getenv("KEY_ALIAS")
-    val kpa = System.getenv("KEY_PASSWORD")
-    
-    if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
-        android {
-            signingConfigs {
-                create("release") {
-                    storeFile = file(ks)
-                    storePassword = kp
-                    keyAlias = ka
-                    keyPassword = kpa
-                }
-            }
-            buildTypes {
-                named("release") {
-                    signingConfig = signingConfigs.getByName("release")
-                }
-            }
-        }
-    }
-}
+// Signing is disabled by default. Enable by setting KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD env vars.
