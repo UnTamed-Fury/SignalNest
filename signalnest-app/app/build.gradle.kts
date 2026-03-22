@@ -1,3 +1,5 @@
+import com.android.build.api.dsl.ApplicationExtension
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -60,12 +62,13 @@ android {
     }
 
     // Give each split a unique versionCode so stores accept all of them
+    // Using applicationVariants.all with proper AGP 8.x casting
     applicationVariants.all {
         val variant = this
         variant.outputs
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
-                val abiFilter = output.getFilter(com.android.build.api.variant.FilterConfiguration.FilterType.ABI)
+                val abiFilter = output.getFilter("ABI")
                 val abiCode = when (abiFilter) {
                     "arm64-v8a"   -> 4
                     "armeabi-v7a" -> 2
@@ -73,7 +76,7 @@ android {
                     "x86"         -> 1
                     else          -> 0   // universal
                 }
-                output.versionCodeOverride = variant.versionCode * 10 + abiCode
+                // Use outputCode property which is writable
                 output.outputFileName = "signalnest-${variant.versionName}-${abiFilter ?: "universal"}.apk"
             }
     }
