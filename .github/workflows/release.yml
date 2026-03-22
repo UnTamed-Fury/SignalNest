@@ -24,6 +24,7 @@ jobs:
 
     env:
       KEYSTORE_FILE: ${{ github.workspace }}/signalnest-release.jks
+      SKIP_SIGNING: "true"   # Set to "false" when keystore secrets are working
 
     steps:
       - uses: actions/checkout@v5
@@ -39,12 +40,12 @@ jobs:
         with:
           gradle-home-cache-cleanup: false
 
+      # Skip keystore decode if SKIP_SIGNING is true
       - name: Decode keystore
-        if: ${{ env.KEYSTORE_BASE64 != '' }}
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.SKIP_SIGNING != 'true' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          # Use awk to handle base64 without any shell modifications
           echo "$KEYSTORE_BASE64" | awk '{printf "%s", $0}' | base64 -d > "$KEYSTORE_FILE"
           chmod 600 "$KEYSTORE_FILE"
           file "$KEYSTORE_FILE"
