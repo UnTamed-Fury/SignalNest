@@ -28,25 +28,12 @@ android {
             applicationIdSuffix = ".debug"
         }
         release {
-            isMinifyEnabled   = true   // R8 + ProGuard enabled for release
-            isShrinkResources = true   // strip unused resources too
+            isMinifyEnabled   = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Only apply signing if all keystore env vars are set
-            val ks = System.getenv("KEYSTORE_FILE")
-            val kp = System.getenv("KEYSTORE_PASSWORD")
-            val ka = System.getenv("KEY_ALIAS")
-            val kpa = System.getenv("KEY_PASSWORD")
-            if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
-                signingConfig = signingConfigs.create("release") {
-                    storeFile = file(ks)
-                    storePassword = kp
-                    keyAlias = ka
-                    keyPassword = kpa
-                }
-            }
         }
     }
 
@@ -132,4 +119,30 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+}
+
+// ── Signing configuration (only when keystore env vars are set) ─────────────
+afterEvaluate {
+    val ks = System.getenv("KEYSTORE_FILE")
+    val kp = System.getenv("KEYSTORE_PASSWORD")
+    val ka = System.getenv("KEY_ALIAS")
+    val kpa = System.getenv("KEY_PASSWORD")
+    
+    if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
+        android {
+            signingConfigs {
+                create("release") {
+                    storeFile = file(ks)
+                    storePassword = kp
+                    keyAlias = ka
+                    keyPassword = kpa
+                }
+            }
+            buildTypes {
+                named("release") {
+                    signingConfig = signingConfigs.getByName("release")
+                }
+            }
+        }
+    }
 }
