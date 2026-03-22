@@ -71,6 +71,10 @@
 -keep class org.jdom2.** { *; }
 -dontwarn org.jdom2.**
 
+# ── SLF4J (used by Rome but not needed on Android) ────────────────────────────
+-dontwarn org.slf4j.**
+-dontwarn org.slf4j.impl.StaticLoggerBinder
+
 # ── General Android ───────────────────────────────────────────────────────────
 -keepclassmembers class * implements android.os.Parcelable {
     public static final ** CREATOR;
