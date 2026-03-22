@@ -25,11 +25,14 @@ android {
     signingConfigs {
         create("release") {
             val ks = System.getenv("KEYSTORE_FILE")
-            if (ks != null) {
+            val kp = System.getenv("KEYSTORE_PASSWORD")
+            val ka = System.getenv("KEY_ALIAS")
+            val kpa = System.getenv("KEY_PASSWORD")
+            if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
                 storeFile     = file(ks)
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-                keyAlias      = System.getenv("KEY_ALIAS")         ?: ""
-                keyPassword   = System.getenv("KEY_PASSWORD")      ?: ""
+                storePassword = kp
+                keyAlias      = ka
+                keyPassword   = kpa
             }
         }
     }
@@ -46,8 +49,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (System.getenv("KEYSTORE_FILE") != null)
+            // Only apply signing if all keystore env vars are set
+            val ks = System.getenv("KEYSTORE_FILE")
+            val kp = System.getenv("KEYSTORE_PASSWORD")
+            val ka = System.getenv("KEY_ALIAS")
+            val kpa = System.getenv("KEY_PASSWORD")
+            if (!ks.isNullOrEmpty() && !kp.isNullOrEmpty() && !ka.isNullOrEmpty() && !kpa.isNullOrEmpty()) {
                 signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
