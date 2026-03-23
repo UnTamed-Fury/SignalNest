@@ -1,128 +1,92 @@
 # Roadmap
 
-## 🎯 Vision
+## Vision
 
-SignalNest aims to be the ultimate personal notification hub, aggregating all your events into one beautiful, intelligent interface.
-
-## 📅 Timeline
-
-### Q1 2026 (January - March) ✅
-
-- [x] Core server implementation
-- [x] Android app with Material 3
-- [x] WebSocket real-time updates
-- [x] 4-theme system
-- [x] LAN mode
-- [x] Monorepo structure
-- [x] Documentation
-
-### Q2 2026 (April - June) 🚧
-
-#### Phase 2: DSL Engine
-- [ ] SNRL (SignalNest Rule Language) lexer
-- [ ] Parser and AST
-- [ ] Rule validator
-- [ ] Execution engine
-- [ ] Schema storage
-
-#### Phase 3: Adapters
-- [ ] GitHub webhook adapter
-- [ ] Discord bot integration
-- [ ] Slack app
-- [ ] Email notifications
-- [ ] RSS feed parser
-
-#### App Improvements
-- [ ] Room database (when not on Termux)
-- [ ] Notification filtering
-- [ ] Search functionality
-- [ ] Export/Import data
-- [ ] Backup to cloud
-
-### Q3 2026 (July - September)
-
-#### Advanced Features
-- [ ] AI-powered notification prioritization
-- [ ] Smart categorization
-- [ ] Notification scheduling
-- [ ] Do Not Disturb integration
-- [ ] Widget support
-
-#### Server Enhancements
-- [ ] PostgreSQL support
-- [ ] Redis caching
-- [ ] Horizontal scaling
-- [ ] Metrics dashboard
-- [ ] Admin panel
-
-### Q4 2026 (October - December)
-
-#### Platform Expansion
-- [ ] iOS app (SwiftUI)
-- [ ] Web app (React)
-- [ ] Desktop app (Tauri)
-- [ ] Browser extension
-
-#### Enterprise Features
-- [ ] Multi-user support
-- [ ] Team notifications
-- [ ] SSO integration
-- [ ] Audit logs
-- [ ] Custom branding
-
-## 🎯 Long-term Goals
-
-### 2027
-
-- [ ] Plugin system
-- [ ] Marketplace for integrations
-- [ ] Cloud-hosted option
-- [ ] Mobile app widgets
-- [ ] Watch app
-- [ ] Voice assistant integration
-
-### 2028+
-
-- [ ] Open source community edition
-- [ ] Enterprise edition
-- [ ] API marketplace
-- [ ] Third-party developers program
-- [ ] Global notification network
-
-## 📊 Current Status
-
-| Component | Status | Progress |
-|-----------|--------|----------|
-| Server Core | ✅ Complete | 100% |
-| Android App | ✅ Complete | 100% |
-| Authentication | ✅ Complete | 100% |
-| WebSocket | ✅ Complete | 100% |
-| Notifications | ✅ Complete | 100% |
-| Theme System | ✅ Complete | 100% |
-| DSL Engine | ⏳ Pending | 0% |
-| Adapters | ⏳ Pending | 0% |
-| Room Database | ⏳ On Hold | 50% |
-| iOS App | ⏳ Planned | 0% |
-| Web App | ⏳ Planned | 0% |
-
-## 🤝 How to Help
-
-We welcome contributions! Here's how you can help:
-
-1. **Pick an issue** - Check GitHub Issues
-2. **Implement a feature** - See roadmap above
-3. **Write documentation** - Always needed
-4. **Test and report bugs** - Very valuable
-5. **Share the project** - Spread the word
-
-## 📝 Notes
-
-- Timeline is approximate and may change
-- Priorities may shift based on community feedback
-- Some features depend on external factors (e.g., Room on Termux)
+SignalNest is a personal webhook notification hub. No cloud accounts, no Firebase, no subscriptions. Deploy a server, install the app, get notified.
 
 ---
 
-**Last Updated:** 2026-03-21
+## Q1 2026 — Phase 1 ✅ Complete
 
-**Contact:** Open an issue or discussion on GitHub
+- [x] Core server (Node.js + Express + WebSocket)
+- [x] Android app (Kotlin + Jetpack Compose + Material 3)
+- [x] Password-based auth — no user accounts
+- [x] Real-time WebSocket push + auto-reconnect
+- [x] LAN mode (NanoHTTPD embedded server)
+- [x] GitHub webhook auto-parser (10+ event types)
+- [x] Feed with grouping, pinning, silent/normal categories
+- [x] Markdown notes, todo list with alarms, RSS reader
+- [x] 4 themes (system / light / dark / AMOLED)
+- [x] ABI splits + GitHub Actions release workflow
+- [x] Termux ARM64 build support
+
+---
+
+## Q2 2026 — Phase 2 ✅ Complete
+
+- [x] SNRL lexer + parser + AST
+- [x] Rule execution engine
+- [x] Rule validator with field checks
+- [x] In-memory rule store (CRUD)
+- [x] REST API for rule management
+- [x] Rules applied to webhook pipeline
+- [x] Rules UI in app (create / edit / validate / toggle)
+- [x] Full-text event search
+- [x] Export / Import (JSON backup of events + notes + todos + rules)
+
+---
+
+## Q3 2026 — Phase 3: Adapters & persistence 🚧
+
+### Server
+- [ ] PostgreSQL / SQLite persistent storage (rules survive restarts)
+- [ ] SNRL: `DROP` mutation to discard events
+- [ ] SNRL: parentheses in conditions
+- [ ] SNRL: `NOTIFY` action override (custom notification title/body separate from event)
+- [ ] Slack app integration
+- [ ] Discord webhook adapter
+- [ ] Email digest (SMTP)
+
+### App
+- [ ] Widget (recent events on home screen)
+- [ ] Do Not Disturb schedule (quiet hours)
+- [ ] Per-group notification channel settings
+- [ ] Swipe-to-dismiss on feed cards
+- [ ] Bulk event actions (select + delete/pin/mark)
+
+---
+
+## Q4 2026 — Phase 4: Platform expansion 📋
+
+- [ ] iOS app (SwiftUI)
+- [ ] Web dashboard (React / SvelteKit)
+- [ ] Desktop app (Tauri)
+- [ ] Multi-device sync (one server → multiple phones)
+
+---
+
+## 2027+ — Long-term 📋
+
+- [ ] AI event prioritisation
+- [ ] Plugin / extension system
+- [ ] Self-hostable cloud edition
+- [ ] Watch app (Wear OS)
+
+---
+
+## Status
+
+| Component | Phase | Status |
+|-----------|-------|--------|
+| Server core | 1 | ✅ Complete |
+| Android app | 1 | ✅ Complete |
+| WebSocket real-time | 1 | ✅ Complete |
+| GitHub adapter | 1 | ✅ Complete |
+| RSS reader | 1 | ✅ Complete |
+| SNRL engine | 2 | ✅ Complete |
+| Event search | 2 | ✅ Complete |
+| Export / Import | 2 | ✅ Complete |
+| Persistent rule storage | 3 | 🚧 Planned |
+| Slack / Discord adapters | 3 | 🚧 Planned |
+| iOS app | 4 | 📋 Future |
+| Web dashboard | 4 | 📋 Future |

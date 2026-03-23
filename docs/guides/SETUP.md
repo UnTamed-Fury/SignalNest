@@ -1,154 +1,116 @@
-# SignalNest Setup Guide
+# Setup Guide
 
-Complete setup instructions for SignalNest development.
+Complete instructions for deploying SignalNest from scratch.
 
 ---
 
 ## Prerequisites
 
-- Node.js 18+
-- Android Studio / Termux with Gradle
-- Firebase account
-- Vercel account (for deployment)
+| Tool | Version | Install |
+|------|---------|---------|
+| Node.js | 18+ | `pkg install nodejs` (Termux) |
+| Java | 17 | `pkg install openjdk-17` |
+| Android SDK | API 34 | via `sdkmanager` |
+| aapt2 | any | `pkg install aapt2` |
 
 ---
 
-## 1. Firebase Setup
+## Server setup
 
-### Create Firebase Project
-1. Go to https://console.firebase.google.com/
-2. Click **"Add project"**
-3. Name: `SignalNest`
-4. Disable Google Analytics (optional)
+### Option A — Render (recommended, free tier)
 
-### Add Android App
-1. Click **Android icon**
-2. Package name: `com.signalnest.app`
-3. Download `google-services.json`
-4. Place in: `forked-version/app/google-services.json`
+1. Push repo to GitHub
+2. [render.com](https://render.com) → **New → Web Service**
+3. Connect repo, set:
+   - **Root Directory:** `signalnest-server`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+4. **Environment Variables:**
+   ```
+   PASSWORD=your_secure_password_here
+   NODE_ENV=production
+   ```
+5. Deploy — note your URL.
 
-### Generate Service Account Key
-1. Go to **Project Settings** ⚙️ → **Service accounts**
-2. Click **"Generate new private key"**
-3. Save as `firebase-credentials.json`
-4. Place in: `mr_notifier-server/firebase-credentials.json`
+### Option B — Self-hosted
+
+```bash
+cd signalnest-server && npm install
+export PASSWORD="secure_password"
+export JWT_SECRET="$(openssl rand -hex 32)"
+export NODE_ENV=production
+npm start
+```
+
+### Option C — Local dev
+
+```bash
+cd signalnest-server
+cp .env.example .env   # set PASSWORD=
+npm install && npm start
+```
 
 ---
 
-## 2. Backend Setup
+## Android app build
 
-### Install Dependencies
+### Termux (ARM64)
+
 ```bash
-cd mr_notifier-server
-npm install
+pkg install openjdk-17 aapt2 android-tools
+sdkmanager "platforms;android-34" "build-tools;34.0.0"
+source ~/.profile
+bash build.sh debug    # → Downloads/signalnest-debug.apk
+bash build.sh release  # signed when KEYSTORE_FILE is set
 ```
 
-### Configure Environment
+### Linux / macOS
+
 ```bash
-cp .env.example .env
-# Edit .env with your settings
-```
-
-### Run Locally
-```bash
-npm run dev
-# Server runs at http://localhost:3000
-```
-
-### Deploy to Vercel
-```bash
-npm install -g vercel
-vercel login
-vercel --prod
-```
-
-### Set Environment Variables (Vercel)
-In Vercel Dashboard → Settings → Environment Variables:
-- `SECRET_KEY` = your-random-secret-key
-- `FIREBASE_CREDENTIALS` = `./firebase-credentials.json`
-
----
-
-## 3. Android App Setup
-
-### Update API URL
-Edit `forked-version/app/src/main/java/com/signalnest/app/data/ApiClient.kt`:
-```kotlin
-private const val BASE_URL = "https://YOUR-VERCEL-URL.vercel.app/"
-```
-
-### Build Debug APK
-```bash
-cd forked-version
+cd signalnest-app && chmod +x gradlew
 ./gradlew assembleDebug
-```
-
-### Install on Device
-```bash
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
----
+### Signing release builds
 
-## 4. Test the System
-
-### Register User
 ```bash
-curl -X POST https://YOUR-URL.vercel.app/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"testpass123"}'
-```
+keytool -genkey -v -keystore ~/signalnest.jks \
+  -keyalg RSA -keysize 2048 -validity 10000 -alias signalnest
 
-### Login
-```bash
-curl -X POST https://YOUR-URL.vercel.app/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"testpass123"}'
-```
-
-### Create Notification
-```bash
-curl -X POST https://YOUR-URL.vercel.app/api/notifications \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{
-    "source_type": "test",
-    "source_name": "manual",
-    "title": "Hello!",
-    "message": "Test notification"
-  }'
+export KEYSTORE_FILE=~/signalnest.jks KEYSTORE_PASSWORD=pass
+export KEY_ALIAS=signalnest KEY_PASSWORD=pass
+bash build.sh release
 ```
 
 ---
 
-## 5. Troubleshooting
+## App onboarding
 
-### Backend won't start
-- Check Node.js version: `node --version` (needs 18+)
-- Check Firebase credentials file exists
-- Check port 3000 is not in use
-
-### Android build fails
-- Ensure `google-services.json` is in `app/` folder
-- Sync Gradle files
-- Clean build: `./gradlew clean`
-
-### Push notifications not working
-- Verify FCM token is registered
-- Check Firebase Console → Cloud Messaging
-- Verify `firebase-credentials.json` is correct
+1. Install APK → **Get Started**
+2. Server URL: `https://your-app.onrender.com`
+3. Password: the `PASSWORD` env var you set
+4. **Connect** — done
 
 ---
 
-## 6. Development Workflow
+## GitHub Actions release
 
-1. Make changes to backend or Android
-2. Test locally
-3. Commit to Git
-4. Deploy backend: `vercel --prod`
-5. Build Android: `./gradlew assembleDebug`
-6. Test on device
+```bash
+git tag v1.0.0 && git push --tags
+```
+
+Produces 5 APK splits and a **draft** release. Publish manually.
+
+Required repo secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
 
 ---
 
-**Last Updated:** 2026-02-22
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `aapt2` not found | `pkg install aapt2` |
+| Gradle OOM | `org.gradle.jvmargs=-Xmx900m` in `gradle.properties` |
+| WS reconnects loop | Use `https://` — app auto-converts to `wss://` |
+| Render goes to sleep | Ping `/health` every 14 min (Uptime Kuma etc.) |

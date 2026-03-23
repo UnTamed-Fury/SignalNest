@@ -24,55 +24,63 @@ jobs:
 
     env:
       KEYSTORE_FILE: ${{ github.workspace }}/signalnest-release.jks
-      SKIP_SIGNING: "true"   # Set to "false" when keystore secrets are working
 
     steps:
+      # ── Checkout ─────────────────────────────────────────────────────────────
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      # ── Java ─────────────────────────────────────────────────────────────────
       - uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: temurin
 
+      # ── Gradle cache ─────────────────────────────────────────────────────────
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-home-cache-cleanup: false
 
-      # Skip keystore decode if SKIP_SIGNING is true
+      # ── Decode keystore ───────────────────────────────────────────────────────
+      # Requires repo secret KEYSTORE_BASE64 (base64 of your .jks file).
+      # Without it the release APKs will be unsigned (still installable via sideload).
       - name: Decode keystore
-        if: ${{ env.KEYSTORE_BASE64 != '' && env.SKIP_SIGNING != 'true' }}
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_BASE64" | awk '{printf "%s", $0}' | base64 -d > "$KEYSTORE_FILE"
-          chmod 600 "$KEYSTORE_FILE"
-          file "$KEYSTORE_FILE"
-          keytool -list -keystore "$KEYSTORE_FILE" -storepass "${{ secrets.KEYSTORE_PASSWORD }}" 2>&1 | head -5 || echo "Keystore check failed"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_FILE"
+          echo "Keystore decoded successfully"
 
+      # ── Set version from tag ──────────────────────────────────────────────────
       - name: Set version
         id: version
         run: |
           TAG="${{ github.event.inputs.tag || github.ref_name }}"
           VERSION="${TAG#v}"
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG"         >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # Numeric versionCode: 1.2.3 → 10203
           CODE=$(echo "$VERSION" | awk -F'[.-]' '{printf "%d%02d%02d", $1, $2, $3}')
-          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE"       >> "$GITHUB_OUTPUT"
 
+      # ── Patch versionName + versionCode ──────────────────────────────────────
       - name: Patch version in build.gradle.kts
         run: |
           sed -i "s/versionCode\s*=\s*[0-9]*/versionCode   = ${{ steps.version.outputs.code }}/" \
             signalnest-app/app/build.gradle.kts
-          sed -i "s/versionName\s*=\s*\"[^\"]*\"/versionName   = \"${{ steps.version.outputs.version }}\"/" \
+          sed -i 's/versionName\s*=\s*"[^"]*"/versionName   = "${{ steps.version.outputs.version }}"/' \
             signalnest-app/app/build.gradle.kts
+          echo "Version patched:"
+          grep -E "versionCode|versionName" signalnest-app/app/build.gradle.kts
 
-      - name: Build release APKs (5 splits)
+      # ── Build all 5 APKs ─────────────────────────────────────────────────────
+      - name: Build release APKs
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS:         ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD:      ${{ secrets.KEY_PASSWORD }}
         run: |
           cd signalnest-app
           chmod +x gradlew
@@ -82,33 +90,35 @@ jobs:
             --build-cache \
             -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
 
+      # ── Collect + rename APKs ─────────────────────────────────────────────────
       - name: Collect APKs
-        id: apks
         run: |
           APK_DIR="signalnest-app/app/build/outputs/apk/release"
           DEST="release-apks"
-          mkdir -p "$DEST"
           V="${{ steps.version.outputs.version }}"
+          mkdir -p "$DEST"
 
-          declare -A MAP=(
-            ["arm64-v8a"]="signalnest-v${V}-arm64-v8a.apk"
-            ["armeabi-v7a"]="signalnest-v${V}-armeabi-v7a.apk"
-            ["x86_64"]="signalnest-v${V}-x86_64.apk"
-            ["x86"]="signalnest-v${V}-x86.apk"
-            ["universal"]="signalnest-v${V}-universal.apk"
-          )
+          echo "APKs found in $APK_DIR:"
+          find "$APK_DIR" -name "*.apk" | sort
 
-          for ABI in "${!MAP[@]}"; do
-            SRC=$(find "$APK_DIR" -name "*${ABI}*" -o -name "*universal*" 2>/dev/null | grep -i "${ABI}" | head -1)
+          # Copy each ABI split + universal
+          for ABI in arm64-v8a armeabi-v7a x86_64 x86 universal; do
+            SRC=$(find "$APK_DIR" -name "*${ABI}*.apk" | head -1)
             if [ -n "$SRC" ]; then
-              cp "$SRC" "$DEST/${MAP[$ABI]}"
-              echo "✓ ${MAP[$ABI]}"
+              DEST_NAME="signalnest-v${V}-${ABI}.apk"
+              cp "$SRC" "$DEST/$DEST_NAME"
+              echo "✓ $DEST_NAME"
+            else
+              echo "✗ No APK found for $ABI"
             fi
           done
 
+          echo ""
+          echo "Collected APKs:"
           ls -lh "$DEST"
 
-      - name: Generate SHA-256 checksums
+      # ── SHA-256 checksums ─────────────────────────────────────────────────────
+      - name: Generate checksums
         id: sha
         run: |
           cd release-apks
@@ -124,27 +134,31 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      # ── Changelog from commits since last tag ─────────────────────────────────
       - name: Generate changelog
         id: changelog
         run: |
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [ -n "$PREV_TAG" ]; then
-            LOG=$(git log "${PREV_TAG}..HEAD" --pretty=format:"- %s (%h)" --no-merges | grep -v "^$" | head -50)
+            LOG=$(git log "${PREV_TAG}..HEAD" \
+              --pretty=format:"- %s (%h)" --no-merges | head -50)
           else
             LOG=$(git log --pretty=format:"- %s (%h)" --no-merges | head -50)
           fi
+          [ -z "$LOG" ] && LOG="- Initial release"
           {
             echo "log<<EOF"
             echo "$LOG"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      # ── Create draft release ──────────────────────────────────────────────────
       - name: Create draft release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: "SignalNest ${{ steps.version.outputs.version }}"
-          draft: true
+          tag_name:   ${{ steps.version.outputs.tag }}
+          name:       "SignalNest ${{ steps.version.outputs.version }}"
+          draft:      true
           prerelease: false
           body: |
             ## SignalNest ${{ steps.version.outputs.version }}
@@ -156,15 +170,15 @@ jobs:
 
             ### Downloads
 
-            | APK | Architecture | Notes |
-            |-----|-------------|-------|
-            | `signalnest-v${{ steps.version.outputs.version }}-arm64-v8a.apk` | ARM64 (v8a) | Modern phones (recommended) |
-            | `signalnest-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | ARMv7 | Older phones |
-            | `signalnest-v${{ steps.version.outputs.version }}-x86_64.apk` | x86_64 | Emulator / Intel phones |
-            | `signalnest-v${{ steps.version.outputs.version }}-x86.apk` | x86 | Old emulator / Intel phones |
-            | `signalnest-v${{ steps.version.outputs.version }}-universal.apk` | Universal | All ABIs in one (largest) |
+            | APK | Architecture | Who needs it |
+            |-----|-------------|--------------|
+            | `signalnest-v${{ steps.version.outputs.version }}-arm64-v8a.apk`   | ARM64       | All modern Android phones ✓ |
+            | `signalnest-v${{ steps.version.outputs.version }}-armeabi-v7a.apk` | ARMv7       | Older phones |
+            | `signalnest-v${{ steps.version.outputs.version }}-x86_64.apk`      | x86_64      | Intel phones / emulators |
+            | `signalnest-v${{ steps.version.outputs.version }}-x86.apk`         | x86         | Old Intel phones / emulators |
+            | `signalnest-v${{ steps.version.outputs.version }}-universal.apk`   | Universal   | All architectures (largest file) |
 
-            > **Not sure which to pick?** Use the `arm64-v8a` APK.
+            > **Not sure?** Download `arm64-v8a` — it works on all modern phones.
 
             ---
 
@@ -172,7 +186,7 @@ jobs:
             ${{ steps.sha.outputs.table }}
 
             <details>
-            <summary>Verify manually</summary>
+            <summary>Verify a file</summary>
 
             ```bash
             sha256sum -c SHA256SUMS.txt
@@ -180,19 +194,8 @@ jobs:
 
             </details>
 
-            ---
-
-            ### Installation
-            1. Download the APK for your architecture
-            2. Enable "Install from unknown sources" in Android settings
-            3. Open the APK and install
-
           files: |
-            release-apks/signalnest-v${{ steps.version.outputs.version }}-arm64-v8a.apk
-            release-apks/signalnest-v${{ steps.version.outputs.version }}-armeabi-v7a.apk
-            release-apks/signalnest-v${{ steps.version.outputs.version }}-x86_64.apk
-            release-apks/signalnest-v${{ steps.version.outputs.version }}-x86.apk
-            release-apks/signalnest-v${{ steps.version.outputs.version }}-universal.apk
+            release-apks/*.apk
             release-apks/SHA256SUMS.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

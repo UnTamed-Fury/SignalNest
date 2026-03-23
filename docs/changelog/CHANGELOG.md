@@ -1,93 +1,66 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-- Initial monorepo structure
-- Android app with Jetpack Compose
-- Node.js server with Express + WebSocket
-- 4-theme system (Light, Gray, Dark, OLED)
-- LAN mode for standalone operation
-- WebSocket real-time notifications
-- JWT authentication
-- Webhook endpoint for integrations
-
-### Changed
-- Migrated from mr_notifier to signalnest-monorepo
-- Updated to Kotlin 2.0.0
-- Updated to AGP 8.6.0
-- Updated to Gradle 9.4.0
-
-### Fixed
-- Initial release
+All notable changes documented here. Format: [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## [1.0.0] - 2026-03-21
+## [2.0.0] — 2026-03-23
 
-### Added
-- Initial release of SignalNest Monorepo
-- Android app with Material 3 design
-- Server with REST API and WebSocket
-- Real-time notification delivery
-- Unread/read notification management
-- Pull-to-sync functionality
-- Settings screen for configuration
-- Build script for unified building
-- pnpm workspace configuration
-- GitHub Actions CI workflow
-- Comprehensive documentation
+### Added — Phase 2: DSL Engine + App improvements
 
-### Security
-- JWT authentication with bcrypt password hashing
-- Rate limiting (100 req/15min)
-- Helmet.js security headers
-- CORS configuration
-- Input validation
+**SNRL (SignalNest Rule Language)**
+- Full rule language: lexer, parser (AST), execution engine, validator
+- 6 operators: `=` `!=` `CONTAINS` `STARTSWITH` `ENDSWITH` `MATCHES` (regex)
+- `AND` / `OR` condition combining
+- `{{field}}` template interpolation in mutations
+- Mutable fields: `title`, `body`, `group`, `category`, `source`
+- REST API: `GET/POST/PATCH/DELETE /app/rules` + `POST /app/rules/validate`
+- Rules applied to every inbound webhook before storage and push
+- Rules UI in app: list, create, edit, live validate, enable/disable toggle
 
----
+**Search**
+- Full-text search across event title, body, source, and group
+- Live results with 200 ms debounce
+- Search accessible from Feed top bar
 
-## Previous Versions (mr_notifier)
+**Export / Import**
+- JSON backup of all events, notes, todos, and SNRL rules
+- SAF file picker (system file chooser) for save/open
+- Merge-import strategy — existing items not deleted
+- Accessible from Settings → Backup & Restore
 
-### [2.4.0] - 2026-02-23
-- 4-Theme System
-- Sync upsert logic
-- No login required
+**Server**
+- `/webhook` now runs SNRL rule pipeline before broadcasting
+- Server version bumped to `2.0.0`
+- `DELETE /app/events` endpoint to clear buffer
 
-### [2.3.0] - 2026-02-22
-- Unread/Read notification system
-- Badge count
-- Mark all as read
-
-### [2.2.0] - 2026-02-21
-- No login required
-- Immediate home screen
-- Configurable server URL
-
-### [2.1.0] - 2026-02-20
-- FCM push notifications
-- Sync endpoint
-- In-memory storage
-
-### [2.0.0] - 2026-02-19
-- Jetpack Compose UI
-- Material 3 design
-- Modern architecture
-
-### [1.0.0] - 2026-02-18
-- Initial release
-- Basic notification display
-- Simple server setup
+**App**
+- `SnrlRule` Room entity + DAO
+- `AppDatabase` bumped to version 2
+- `@Serializable` added to `Event`, `Note`, `Todo`, `SnrlRule`
+- Bottom nav hides with slide animation on Phase 2 screens
+- Settings: new "Automation" (Rules) and "Data" (Backup) sections
 
 ---
 
-**Legend:**
-- 🚀 Added - New features
-- 🔧 Changed - Changes in existing functionality
-- 🐛 Fixed - Bug fixes
-- ⚡ Security - Security improvements
+## [1.0.0] — 2026-03-21
+
+### Added — Phase 1: Core system
+
+- Android app: Jetpack Compose + Material 3, dark/AMOLED/light/dynamic themes
+- Server: Node.js + Express + WebSocket on Render
+- Password-based auth (no user accounts)
+- Real-time event push via WebSocket with auto-reconnect
+- LAN mode: NanoHTTPD embedded server receives webhooks on the local network
+- Feed: events with grouping, filtering, pin, mark read, copy payload
+- Notes: staggered grid, colour chips, Markdown content
+- Todos: priority, due dates, cron expressions, WorkManager alarms
+- RSS: configurable feed polling, silent/normal notifications
+- Boot receiver: service restarts on device reboot
+- GitHub webhook auto-parser: push, PR, issues, releases, workflow_run, star, fork, etc.
+- Room database: Event, Note, Todo, RssFeed entities
+- DataStore preferences: server URL, token, theme, notification settings
+- ProGuard rules for release builds
+- ABI splits: arm64-v8a, armeabi-v7a, x86_64, x86, universal
+- GitHub Actions CI + release workflow (draft releases with SHA-256 checksums)
+- Termux ARM64 build script with aapt2 override

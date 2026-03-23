@@ -1,5 +1,3 @@
-import com.android.build.api.dsl.ApplicationExtension
-
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -22,6 +20,20 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    // Signing — reads from env vars set by CI secrets or locally.
+    // Debug uses the default debug keystore automatically (no config needed).
+    signingConfigs {
+        create("release") {
+            val ks = System.getenv("KEYSTORE_FILE")
+            if (ks != null) {
+                storeFile     = file(ks)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+                keyAlias      = System.getenv("KEY_ALIAS")         ?: ""
+                keyPassword   = System.getenv("KEY_PASSWORD")      ?: ""
+            }
+        }
+    }
+
     buildTypes {
         debug {
             isMinifyEnabled     = false
@@ -34,36 +46,31 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Wire signing only when the keystore env var is present
+            if (System.getenv("KEYSTORE_FILE") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
-    // ── ABI splits — produces: arm64-v8a, armeabi-v7a, x86_64, x86, universal
+    // ── ABI splits: arm64-v8a, armeabi-v7a, x86_64, x86 + universal fat APK
     splits {
         abi {
-            isEnable = true
+            isEnable      = true
             reset()
             include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-            isUniversalApk = true   // also build the fat universal APK
+            isUniversalApk = true
         }
     }
 
-    // Give each split a unique versionCode so stores accept all of them
-    // Using applicationVariants.all with proper AGP 8.x casting
+    // Rename each split output to a human-readable filename
     applicationVariants.all {
-        val variant = this
-        variant.outputs
+        val vName = versionName
+        outputs
             .map { it as com.android.build.gradle.internal.api.BaseVariantOutputImpl }
             .forEach { output ->
-                val abiFilter = output.getFilter("ABI")
-                val abiCode = when (abiFilter) {
-                    "arm64-v8a"   -> 4
-                    "armeabi-v7a" -> 2
-                    "x86_64"      -> 3
-                    "x86"         -> 1
-                    else          -> 0   // universal
-                }
-                // Use outputCode property which is writable
-                output.outputFileName = "signalnest-${variant.versionName}-${abiFilter ?: "universal"}.apk"
+                val abi = output.getFilter("ABI") ?: "universal"
+                output.outputFileName = "signalnest-${vName}-${abi}.apk"
             }
     }
 
@@ -83,7 +90,9 @@ android {
         kotlinCompilerExtensionVersion = "1.5.4"
     }
 
-    packaging { resources { excludes += setOf("/META-INF/{AL2.0,LGPL2.1}") } }
+    packaging {
+        resources { excludes += setOf("/META-INF/{AL2.0,LGPL2.1}") }
+    }
 }
 
 dependencies {
@@ -120,4 +129,3 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
-// Signing is disabled by default. Enable by setting KEYSTORE_FILE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD env vars.

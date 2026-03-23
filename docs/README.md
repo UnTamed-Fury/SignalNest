@@ -1,113 +1,102 @@
 # SignalNest Documentation
 
-> Personal event aggregation and notification intelligence system.
+> Webhook notifications — no cloud, no Firebase, no account required.
 
 ---
 
-## 📚 Documentation Sections
+## 📚 Sections
 
-| Section | Description |
-|---------|-------------|
-| [Changelog](changelog/CHANGELOG.md) | Version history and changes |
-| [Roadmap](roadmap/ROADMAP.md) | Development phases and timeline |
-| [API Reference](api/API.md) | Backend API documentation |
-| [Guides](guides/) | How-to guides and tutorials |
+| File | What's in it |
+|------|-------------|
+| [SETUP.md](guides/SETUP.md) | Deploy server + build app from scratch |
+| [API.md](api/API.md) | Full REST + WebSocket API reference |
+| [SNRL.md](snrl/SNRL.md) | SignalNest Rule Language guide |
+| [WEBHOOK_EXAMPLES.md](../docs/WEBHOOK_EXAMPLES.md) | Copy-paste examples for GitHub, Grafana, Python, etc. |
+| [ENV.md](ENV.md) | Environment variables reference |
+| [ROADMAP.md](roadmap/ROADMAP.md) | Development timeline |
+| [CHANGELOG.md](changelog/CHANGELOG.md) | Version history |
 
 ---
 
-## 🚀 Quick Start
+## Architecture
 
-### Backend (Vercel)
+```
+[Any service / script / GitHub]
+         │
+         │  POST /webhook  (public, no auth)
+         ▼
+ ┌─────────────────────────┐
+ │  signalnest-server      │  Node.js + Express + WebSocket
+ │  Render / self-hosted   │  SNRL rule engine
+ │  env: PASSWORD=...      │
+ └────────────┬────────────┘
+              │  WebSocket push  (/ws?token=...)
+              ▼
+ ┌─────────────────────────┐
+ │  SignalNest Android App │  Kotlin + Jetpack Compose
+ │  Feed · Notes · Todos   │  Room DB · DataStore
+ │  RSS · SNRL Rules       │  WorkManager alarms
+ └─────────────────────────┘
+```
+
+No Firebase. No Google services. Events go server → WebSocket → app instantly.
+
+---
+
+## Quick start (5 minutes)
+
+### 1. Deploy the server on Render
+
+1. Push this repo to GitHub
+2. [Render](https://render.com) → New Web Service → connect repo
+3. Root directory: `signalnest-server`
+4. Build: `npm install`  Start: `npm start`
+5. Add env var `PASSWORD=your_password`
+6. Deploy → note your URL (`https://your-app.onrender.com`)
+
+### 2. Build the app (Termux)
 
 ```bash
-# Deploy
-cd mr_notifier-server
-vercel --prod
-
-# Test
-curl https://signalnest-api-personal.vercel.app/health
+source ~/.profile          # load ANDROID_HOME, JAVA_HOME
+bash build.sh debug
+# APK lands in Downloads/signalnest-debug.apk
 ```
 
-### Android App
+### 3. Connect
+
+1. Install APK → tap **Get Started**
+2. Enter your Render URL + password → **Connect**
+3. Done. Events appear instantly.
+
+### 4. Send your first event
 
 ```bash
-# Build
-cd forked-version
-./gradlew assembleDebug
-
-# Install
-adb install app/build/outputs/apk/debug/app-debug.apk
+curl -X POST https://your-app.onrender.com/webhook \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Hello SignalNest","message":"It works!"}'
 ```
 
 ---
 
-## 📋 System Architecture
+## Project layout
 
 ```
-[ External Sources ]
-        ↓
-[ SignalNest Server ]
-    - FastAPI → Node.js/Express
-    - JWT Auth
-    - Notification Queue
-        ↓
-[ Firebase FCM ]
-        ↓
-[ Android App ]
-    - SQLite (offline-first)
-    - Material 3 UI
-    - Notes + Todos
+signalnest-monorepo/
+├── signalnest-server/        Node.js Express server
+│   ├── src/
+│   │   ├── snrl/             SNRL rule engine (lexer/parser/engine)
+│   │   ├── webhook/          Inbound webhook handler
+│   │   ├── ws/               WebSocket server
+│   │   ├── auth/             Password → JWT token
+│   │   └── events/           In-memory event ring buffer
+│   └── render.yaml
+├── signalnest-app/           Android app (Kotlin + Compose)
+│   └── app/src/main/java/com/signalnest/app/
+│       ├── data/             Room DB, DataStore, ExportManager
+│       ├── network/          OkHttp API client
+│       ├── server/           WsClient, ConnectionService, LanServer
+│       ├── ui/               Screens, ViewModels, Theme
+│       └── worker/           WorkManager todo alarms
+├── build.sh                  Termux build script
+└── docs/                     This documentation
 ```
-
----
-
-## 🔧 Environment Setup
-
-### Backend Variables
-```bash
-SECRET_KEY=your-secret-key
-FIREBASE_CREDENTIALS=./firebase-credentials.json
-DATABASE_URL=file:./dev.db
-```
-
-### Android Setup
-1. Add `google-services.json` to `app/`
-2. Update `ApiClient.kt` with backend URL
-3. Build and run
-
----
-
-## 📱 Features
-
-### Current (v0.1.0)
-- ✅ User registration/login
-- ✅ Push notifications via FCM
-- ✅ Notification delivery tracking
-- ✅ ACK-based confirmation
-- ✅ Sync endpoint
-
-### Coming Soon
-- 🔄 Login UI
-- 📋 Pin/delete notifications
-- 📋 Notes and Todos
-- 📋 Search and filtering
-- 📋 Settings page
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
----
-
-## 📄 License
-
-ISC License
-
----
-
-**Last Updated:** 2026-02-22

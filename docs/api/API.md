@@ -1,412 +1,238 @@
-# SignalNest API Reference
+# SignalNest API Reference v2.0
 
 ## Base URL
 
 ```
-Development: http://localhost:3000
-Production:  https://your-server.com
+Local:       http://localhost:3000
+Production:  https://your-app.onrender.com
 ```
 
 ## Authentication
 
-Most endpoints require JWT authentication:
+The server uses a single `PASSWORD` env var. The app exchanges it for a JWT token once at setup. All protected endpoints require:
 
 ```
-Authorization: Bearer <your-jwt-token>
-```
-
----
-
-## Endpoints
-
-### Health
-
-#### `GET /`
-
-Server info.
-
-**Response:**
-```json
-{
-  "name": "SignalNest Server",
-  "version": "1.0.0",
-  "status": "running",
-  "timestamp": "2026-03-21T12:00:00.000Z"
-}
-```
-
-#### `GET /health`
-
-Health check.
-
-**Response:**
-```json
-{
-  "status": "healthy",
-  "uptime": 12345.67,
-  "memory": { "rss": 123456789 }
-}
+Authorization: Bearer <token>
 ```
 
 ---
 
-### Auth
+## App endpoints (require token)
 
-#### `POST /auth/register`
+### `POST /app/connect`
 
-Register new user.
+Exchange password for a WS token. Called once during onboarding.
 
 **Request:**
 ```json
-{
-  "username": "testuser",
-  "email": "test@example.com",
-  "password": "password123"
-}
+{ "password": "your_server_password" }
 ```
 
-**Response (201):**
+**Response 200:**
 ```json
-{
-  "user": {
-    "id": "uuid-here",
-    "username": "testuser",
-    "email": "test@example.com",
-    "createdAt": "2026-03-21T12:00:00.000Z"
-  }
-}
+{ "token": "eyJ...", "ok": true }
 ```
 
-#### `POST /auth/login`
-
-Login.
-
-**Request:**
+**Response 401:**
 ```json
-{
-  "username": "testuser",
-  "password": "password123"
-}
-```
-
-**Response (200):**
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "id": "uuid-here",
-    "username": "testuser",
-    "email": "test@example.com"
-  }
-}
-```
-
-#### `GET /auth/me`
-
-Get current user.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response (200):**
-```json
-{
-  "id": "uuid-here",
-  "username": "testuser",
-  "email": "test@example.com"
-}
+{ "error": "Invalid password" }
 ```
 
 ---
 
-### Notifications
+### `GET /app/events`
 
-#### `GET /api/notifications`
+Pull buffered events (last 200 by default). Used to catch up on missed events.
 
-List notifications.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Query Params:**
-- `limit` (default: 50)
-- `offset` (default: 0)
-- `unreadOnly` (default: false)
+**Query params:** `?limit=200` (max 500)
 
 **Response:**
 ```json
 {
-  "notifications": [
+  "events": [
     {
       "id": "uuid",
-      "title": "Build Failed",
-      "body": "CI build #123 failed",
-      "sourceType": "github",
-      "type": "error",
-      "isRead": false,
-      "pinned": false,
-      "createdAt": 1234567890000,
-      "updatedAt": 1234567890000
+      "title": "Push to main",
+      "body": "3 commits by user",
+      "source": "myorg/myrepo",
+      "group": "myorg",
+      "category": "normal",
+      "channel": "remote",
+      "rawPayload": "{...}",
+      "ts": 1234567890000
     }
-  ],
-  "total": 1
-}
-```
-
-#### `POST /api/notifications`
-
-Create notification.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Request:**
-```json
-{
-  "title": "New Notification",
-  "body": "Notification body",
-  "sourceType": "api",
-  "type": "info",
-  "metadata": { "key": "value" }
-}
-```
-
-**Response (201):**
-```json
-{
-  "id": "uuid",
-  "title": "New Notification",
-  "body": "Notification body",
-  "sourceType": "api",
-  "type": "info",
-  "isRead": false,
-  "pinned": false,
-  "createdAt": 1234567890000
-}
-```
-
-#### `GET /api/notifications/unread/count`
-
-Get unread count.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{ "count": 5 }
-```
-
-#### `PATCH /api/notifications/:id/read`
-
-Mark as read.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{
-  "notification": {
-    "id": "uuid",
-    "title": "Notification",
-    "isRead": true,
-    "updatedAt": 1234567890000
-  }
-}
-```
-
-#### `PATCH /api/notifications/:id/unread`
-
-Mark as unread.
-
-**Headers:** `Authorization: Bearer <token>`
-
-#### `PATCH /api/notifications/mark-all-read`
-
-Mark all as read.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response:**
-```json
-{ "markedCount": 5 }
-```
-
-#### `DELETE /api/notifications/:id`
-
-Delete notification.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Response:** `204 No Content`
-
-#### `PATCH /api/notifications/:id/pin`
-
-Toggle pin.
-
-**Headers:** `Authorization: Bearer <token>`
-
----
-
-### Webhook
-
-#### `POST /api/webhook`
-
-Create notification via webhook.
-
-**Headers:** `Authorization: Bearer <token>`
-
-**Request:**
-```json
-{
-  "title": "Build Failed",
-  "body": "CI build #123 failed",
-  "sourceType": "github",
-  "type": "error",
-  "metadata": {}
-}
-```
-
-**Response (201):**
-```json
-{
-  "notification": {
-    "id": "uuid",
-    "title": "Build Failed",
-    "body": "CI build #123 failed",
-    "sourceType": "github",
-    "type": "error",
-    "isRead": false,
-    "createdAt": 1234567890000
-  }
+  ]
 }
 ```
 
 ---
 
-### WebSocket
+### `DELETE /app/events`
 
-Connect to: `ws://localhost:3000/ws?token=JWT_TOKEN`
+Clear the server-side event buffer.
 
-#### Client → Server Messages
+**Response 200:** `{ "ok": true }`
 
-**Ping:**
-```json
-{ "type": "ping" }
-```
+---
 
-**Get Notifications:**
-```json
-{ "type": "get_notifications" }
-```
+### `GET /app/rules`
 
-**Get Unread Count:**
-```json
-{ "type": "get_unread_count" }
-```
+List all SNRL rules.
 
-#### Server → Client Messages
-
-**Connected:**
+**Response:**
 ```json
 {
-  "type": "connected",
-  "userId": "uuid",
-  "username": "testuser",
-  "timestamp": 1234567890000
+  "rules": [
+    {
+      "id": "uuid",
+      "name": "Label GitHub CI",
+      "text": "WHEN source = \"github\" AND title CONTAINS \"workflow\"\nTHEN group = \"ci\", title = \"⚙️ {{title}}\"",
+      "enabled": true,
+      "order": 0,
+      "createdAt": "2026-03-23T00:00:00.000Z",
+      "updatedAt": "2026-03-23T00:00:00.000Z"
+    }
+  ]
 }
 ```
 
-**Pong:**
-```json
-{ "type": "pong", "timestamp": 1234567890000 }
-```
+---
 
-**New Notification:**
+### `POST /app/rules`
+
+Create a new SNRL rule.
+
+**Request:**
 ```json
 {
-  "type": "new_notification",
-  "notification": { ... }
+  "name": "Silent monitoring",
+  "text": "WHEN group = \"uptime\" THEN category = \"silent\""
 }
 ```
 
-**Notification Updated:**
+**Response 201:** `{ "rule": { ... } }`
+
+**Response 400:** `{ "error": "SNRL parse error: expected THEN, got EOF" }`
+
+---
+
+### `GET /app/rules/:id`
+
+Get one rule by ID.
+
+---
+
+### `PATCH /app/rules/:id`
+
+Update rule. All fields optional.
+
+**Request:**
 ```json
 {
-  "type": "notification_updated",
-  "notification": { ... }
+  "name": "New name",
+  "text": "WHEN source = \"grafana\" THEN group = \"alerts\"",
+  "enabled": false,
+  "order": 2
 }
 ```
 
-**All Read:**
+**Response 200:** `{ "rule": { ... } }`
+
+---
+
+### `DELETE /app/rules/:id`
+
+Delete a rule. **Response 204.**
+
+---
+
+### `POST /app/rules/validate`
+
+Validate rule syntax without saving.
+
+**Request:** `{ "text": "WHEN source = \"x\" THEN group = \"y\"" }`
+
+**Response 200 (valid):**
 ```json
-{ "type": "all_read", "count": 5 }
+{ "ok": true, "warnings": [] }
 ```
+
+**Response 200 (invalid):**
+```json
+{ "ok": false, "error": "SNRL parse error: expected THEN, got EOF" }
+```
+
+---
+
+## Webhook endpoint (public, no auth)
+
+### `POST /webhook`
+
+The main inbound endpoint. Any JSON body. No authentication required.
+
+**GitHub webhooks** are auto-detected via the `x-github-event` header and parsed into structured events.
+
+**Field mapping for generic JSON:**
+
+| Priority | Field name(s) | Maps to |
+|----------|--------------|---------|
+| 1st | `title`, `summary`, `subject`, `alertname` | `event.title` |
+| 2nd | `message`, `body`, `description`, `text`, `msg` | `event.body` |
+| 3rd | `source`, `service`, `host`, `from` | `event.source` |
+| 4th | `group`, `category`, `namespace` | `event.group` |
+| — | `silent: true` | `category = "silent"` (no sound) |
+
+**Response 202:**
+```json
+{ "ok": true, "id": "uuid" }
+```
+
+**SNRL rules are applied** to the event before it is stored and pushed to the app.
+
+---
+
+## WebSocket
+
+Connect: `wss://your-app.onrender.com/ws?token=<token>`
+
+The server sends existing buffered events immediately on connect (as `"events"`), then pushes new ones as `"event"` in real time.
+
+### Server → Client
+
+| Type | Payload | When |
+|------|---------|------|
+| `events` | `{ data: Event[] }` | On connect — catch-up batch |
+| `event`  | `{ data: Event }`   | New event arrives |
+| `pong`   | `{ ts: number }`    | In response to `ping` |
+
+### Client → Server
+
+| Type | When to send |
+|------|-------------|
+| `ping` | Keepalive (client-initiated, optional) |
+
+---
+
+## Other endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/` | Server info + version |
+| `GET` | `/health` | `{ ok: true, uptime: N }` |
 
 ---
 
 ## Errors
 
-### 400 Bad Request
+All errors return JSON:
 ```json
-{ "error": "Title and body are required" }
+{ "error": "Human-readable message" }
 ```
 
-### 401 Unauthorized
-```json
-{ "error": "No token provided" }
-```
-
-### 404 Not Found
-```json
-{ "error": "Not Found", "path": "/api/unknown" }
-```
-
-### 429 Too Many Requests
-```json
-{ "error": "Too many requests, please try again later" }
-```
-
-### 500 Internal Server Error
-```json
-{ "error": "Internal server error" }
-```
-
----
-
-## Rate Limiting
-
-**Default:** 100 requests per 15 minutes per IP
-
-**Headers:**
-```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 99
-X-RateLimit-Reset: 1234567890
-```
-
----
-
-## Quick Test
-
-```bash
-# Register
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test","email":"test@example.com","password":"password123"}'
-
-# Login (save token)
-TOKEN=$(curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"password123"}' | jq -r .token)
-
-# Create notification
-curl -X POST http://localhost:3000/api/notifications \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"title":"Test","body":"Hello!"}'
-
-# Get notifications
-curl -X GET http://localhost:3000/api/notifications \
-  -H "Authorization: Bearer $TOKEN"
-
-# Mark all as read
-curl -X PATCH http://localhost:3000/api/notifications/mark-all-read \
-  -H "Authorization: Bearer $TOKEN"
-```
+| Code | Meaning |
+|------|---------|
+| 400 | Bad request / validation failed |
+| 401 | Missing or invalid token |
+| 404 | Route not found |
+| 429 | Rate limit exceeded (120 req/min) |
+| 500 | Server error |

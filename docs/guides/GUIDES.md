@@ -1,224 +1,149 @@
-# SignalNest Guides
-
-## Quick Setup (5 minutes)
-
-### 1. Install & Run Server
-
-```bash
-git clone https://github.com/yourusername/signalnest-monorepo.git
-cd signalnest-monorepo
-pnpm install
-pnpm run server:dev
-```
-
-Server: `http://localhost:3000`
-
-### 2. Build App
-
-**Desktop:**
-```bash
-cd signalnest-app
-./gradlew assembleDebug
-adb install app/build/outputs/apk/debug/app-debug.apk
-```
-
-**Termux:** See [BUILD_STATUS.md](../BUILD_STATUS.md)
-
-### 3. Configure App
-
-1. Open SignalNest
-2. Settings → Server URL
-3. Enter: `http://10.0.2.2:3000/` (emulator) or `http://192.168.x.x:3000/` (device)
-4. Save
+# Guides
 
 ---
 
-## Server Deployment
-
-### Render (Recommended)
-
-1. Push to GitHub
-2. [Render](https://render.com) → New + → Blueprint
-3. Connect repo → Deploy
-
-### Vercel
+## Sending your first webhook
 
 ```bash
-cd signalnest-server
-vercel --prod
-```
-
-### Self-Hosted
-
-```bash
-pnpm install --prod
-export JWT_SECRET="your-secret-key-min-32-chars"
-export NODE_ENV=production
-pnpm start
-```
-
----
-
-## Integrations
-
-### GitHub Actions
-
-```yaml
-name: Notify SignalNest
-on:
-  workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-
-jobs:
-  notify:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Send notification
-        run: |
-          curl -X POST ${{ secrets.SIGNALNEST_URL }}/api/webhook \
-            -H "Authorization: Bearer ${{ secrets.SIGNALNEST_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "title": "Build ${{ github.event.workflow_run.conclusion }}",
-              "body": "Build #${{ github.run_number }}",
-              "sourceType": "github",
-              "type": "${{ github.event.workflow_run.conclusion == 'success' && 'success' || 'error' }}"
-            }'
-```
-
-### Grafana Alertmanager
-
-```yaml
-# alertmanager.yml
-receivers:
-  - name: 'signalnest'
-    webhook_configs:
-      - url: 'http://your-server.com/api/webhook'
-        send_resolved: true
-        http_config:
-          bearer_token: 'YOUR_JWT_TOKEN'
-
-route:
-  receiver: 'signalnest'
-  group_by: ['alertname']
-```
-
-### Node.js
-
-```javascript
-const fetch = require('node-fetch');
-
-async function notify(title, body, type = 'info') {
-  await fetch('https://your-server.com/api/webhook', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer YOUR_JWT_TOKEN`
-    },
-    body: JSON.stringify({ title, body, sourceType: 'custom', type })
-  });
-}
-
-notify('Test', 'Hello from Node.js!', 'success');
-```
-
-### Python
-
-```python
-import requests
-
-def notify(title, body, type='info'):
-    requests.post(
-        'https://your-server.com/api/webhook',
-        headers={
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_JWT_TOKEN'
-        },
-        json={'title': title, 'body': body, 'sourceType': 'python', 'type': type}
-    )
-
-notify('Test', 'Hello from Python!', 'success')
-```
-
-### cURL
-
-```bash
-# Get token
-TOKEN=$(curl -X POST http://localhost:3000/auth/login \
+curl -X POST https://your-app.onrender.com/webhook \
   -H "Content-Type: application/json" \
-  -d '{"username":"test","password":"password123"}' | jq -r .token)
+  -d '{"title":"Hello","message":"SignalNest works!"}'
+```
 
-# Send notification
-curl -X POST http://localhost:3000/api/webhook \
+Open the app — the event appears in the Feed instantly.
+
+---
+
+## Setting up GitHub webhooks
+
+1. Go to your repo → **Settings → Webhooks → Add webhook**
+2. **Payload URL:** `https://your-app.onrender.com/webhook`
+3. **Content type:** `application/json`
+4. **Events:** send me everything (or select specific ones)
+5. Save — a `ping` event arrives in your Feed immediately
+
+SignalNest auto-formats GitHub events. A failed workflow run looks like:
+> `❌ CI failure — myorg/myrepo`  
+> `Branch: main · Triggered by username`
+
+---
+
+## Creating SNRL rules
+
+Rules transform events before they reach your phone.
+
+### In the app
+
+Settings → **SNRL Rules** → `+`
+
+Example — silence all "up" pings from Uptime Kuma:
+```
+WHEN source CONTAINS "uptime" AND title CONTAINS " up"
+THEN category = "silent"
+```
+
+Tap **Validate** to check syntax, then **Create**.
+
+### Via API
+
+```bash
+TOKEN="your_ws_token"  # from /app/connect response
+
+curl -X POST https://your-app.onrender.com/app/rules \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"title":"Alert","body":"Something happened","type":"warning"}'
+  -d '{
+    "name": "Label GitHub CI",
+    "text": "WHEN source CONTAINS \"/\" AND title CONTAINS \"workflow\"\nTHEN group = \"ci\", title = \"⚙️ {{title}}\""
+  }'
 ```
+
+See [SNRL.md](../snrl/SNRL.md) for the full language reference.
 
 ---
 
-## Troubleshooting
+## Exporting and restoring your data
 
-### Server won't start
+1. Settings → **Backup & Restore** → **Choose save location**
+2. Pick a folder — creates `signalnest-backup-YYYYMMDD-HHmm.json`
+
+The backup includes events, notes, todos, and SNRL rules. To restore on a new device:
+1. Copy the JSON file to the new device
+2. Settings → **Backup & Restore** → **Choose backup file**
+3. Tap the JSON file — items are merged in
+
+---
+
+## Building from source on Termux
 
 ```bash
-# Check Node.js version
-node --version  # Must be >= 18
+# 1. Install deps (once)
+pkg install openjdk-17 aapt2 android-tools git
 
-# Check port
-lsof -i :3000
+# 2. Clone
+git clone https://github.com/yourusername/signalnest-monorepo
+cd signalnest-monorepo
 
-# Check logs
-pnpm run server:dev 2>&1 | tee server.log
+# 3. Build
+source ~/.profile
+bash build.sh debug
+
+# APK lands in ~/storage/downloads/signalnest-debug.apk
 ```
-
-### App build fails
-
-```bash
-# Check Java
-java -version  # Must be 17+
-
-# Check Android SDK
-echo $ANDROID_HOME
-ls $ANDROID_HOME/platforms
-
-# Clean build
-cd signalnest-app
-./gradlew clean
-./gradlew assembleDebug
-```
-
-### WebSocket not connecting
-
-1. Verify server is running
-2. Check token is valid
-3. Check firewall settings
-4. Test: `ws://localhost:3000/ws?token=YOUR_TOKEN`
-
-### Notifications not appearing
-
-1. Grant notification permission
-2. Verify server URL in Settings
-3. Pull to sync manually
-4. Check server logs
 
 ---
 
-## FAQ
+## Keeping Render's free tier awake
 
-**Q: Can I use the app without a server?**  
-A: Yes! Use "LAN Mode" for standalone operation.
+Render free web services sleep after 15 minutes. Set up Uptime Kuma (or any HTTP monitor) to ping your health endpoint every 14 minutes:
 
-**Q: How do I backup notifications?**  
-A: Notifications are stored in-app. Export feature coming soon.
+- **URL:** `https://your-app.onrender.com/health`
+- **Interval:** 14 minutes
+- **Expected status:** 200
 
-**Q: Can I customize themes?**  
-A: 4 themes available: Light, Gray, Dark, OLED.
-
-**Q: Is end-to-end encryption supported?**  
-A: Not yet. Use HTTPS for remote connections.
+This keeps the server warm so webhooks arrive instantly.
 
 ---
 
-For more help, see [CONTRIBUTING.md](../CONTRIBUTING.md) or open an issue.
+## Integrating with Python scripts
+
+```python
+import requests, os
+
+WEBHOOK = os.getenv("SIGNALNEST_WEBHOOK", "https://your-app.onrender.com/webhook")
+
+def notify(title, body="", group="scripts", silent=False):
+    try:
+        requests.post(WEBHOOK, json={
+            "title": title,
+            "message": body,
+            "group": group,
+            "silent": silent,
+        }, timeout=5)
+    except Exception as e:
+        print(f"SignalNest notify failed: {e}")
+
+# In your script:
+notify("Backup completed", f"3.2 GB backed up at {__import__('datetime').datetime.now()}")
+```
+
+---
+
+## Integrating with GitHub Actions
+
+```yaml
+- name: Notify SignalNest
+  if: always()
+  run: |
+    STATUS="${{ job.status }}"
+    EMOJI=$([[ "$STATUS" == "success" ]] && echo "✅" || echo "❌")
+    curl -sf -X POST ${{ secrets.SIGNALNEST_WEBHOOK }} \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"title\": \"$EMOJI Build $STATUS\",
+        \"message\": \"${{ github.repository }} #${{ github.run_number }}\",
+        \"group\": \"ci\"
+      }"
+```
+
+Add `SIGNALNEST_WEBHOOK` as a repo secret set to `https://your-app.onrender.com/webhook`.

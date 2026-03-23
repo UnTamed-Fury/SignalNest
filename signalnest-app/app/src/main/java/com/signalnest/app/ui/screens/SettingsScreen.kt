@@ -19,25 +19,34 @@ import com.signalnest.app.ui.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel) {
-    val ctx        = LocalContext.current
-    val cs         = MaterialTheme.colorScheme
-    val serverUrl  by vm.serverUrl.collectAsStateWithLifecycle()
-    val theme      by vm.theme.collectAsStateWithLifecycle()
-    val amoled     by vm.amoled.collectAsStateWithLifecycle()
-    val sound      by vm.notifSound.collectAsStateWithLifecycle()
-    val vib        by vm.notifVib.collectAsStateWithLifecycle()
-    val maxEvents  by vm.maxEvents.collectAsStateWithLifecycle()
-    var sliderVal  by remember(maxEvents) { mutableFloatStateOf(maxEvents.toFloat()) }
-    var showReset  by remember { mutableStateOf(false) }
+fun SettingsScreen(
+    vm: SettingsViewModel,
+    onFilters: () -> Unit = {},
+    onBackup:  () -> Unit = {},
+) {
+    val ctx       = LocalContext.current
+    val cs        = MaterialTheme.colorScheme
+    val serverUrl by vm.serverUrl.collectAsStateWithLifecycle()
+    val theme     by vm.theme.collectAsStateWithLifecycle()
+    val amoled    by vm.amoled.collectAsStateWithLifecycle()
+    val sound     by vm.notifSound.collectAsStateWithLifecycle()
+    val vib       by vm.notifVib.collectAsStateWithLifecycle()
+    val maxEvents by vm.maxEvents.collectAsStateWithLifecycle()
+    var sliderVal by remember(maxEvents) { mutableFloatStateOf(maxEvents.toFloat()) }
+    var showReset by remember { mutableStateOf(false) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Settings") }, colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background)) },
+        topBar = {
+            TopAppBar(title = { Text("Settings") },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = cs.background))
+        },
         containerColor = cs.background,
     ) { pad ->
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(pad).padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)) {
-
+        Column(
+            Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                .padding(pad).padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             SHeader("Server")
             SCard {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -45,10 +54,23 @@ fun SettingsScreen(vm: SettingsViewModel) {
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text("Connected server", style = MaterialTheme.typography.titleMedium)
-                        Text(serverUrl.ifBlank { "Not configured" }, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+                        Text(serverUrl.ifBlank { "Not configured" },
+                            style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
                     }
                 }
             }
+
+            // ── Phase 2 ───────────────────────────────────────────────────────
+            SHeader("Automation")
+            SCard {
+                NavRow("SNRL Rules", "Transform events with custom rules", Icons.Default.Rule, onFilters)
+            }
+
+            SHeader("Data")
+            SCard {
+                NavRow("Backup & Restore", "Export or import all your data", Icons.Default.Backup, onBackup)
+            }
+            // ─────────────────────────────────────────────────────────────────
 
             SHeader("Appearance")
             SCard {
@@ -56,7 +78,8 @@ fun SettingsScreen(vm: SettingsViewModel) {
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("SYSTEM", "LIGHT", "DARK").forEach { t ->
-                        FilterChip(theme == t, { vm.setTheme(t) }, label = { Text(t.lowercase().replaceFirstChar { it.uppercase() }) })
+                        FilterChip(theme == t, { vm.setTheme(t) },
+                            label = { Text(t.lowercase().replaceFirstChar { it.uppercase() }) })
                     }
                 }
                 HorizontalDivider(Modifier.padding(vertical = 10.dp))
@@ -65,9 +88,9 @@ fun SettingsScreen(vm: SettingsViewModel) {
 
             SHeader("Notifications")
             SCard {
-                SwitchRow("Sound", "Play sound on new event", Icons.Default.VolumeUp, sound) { vm.setNotifSound(it) }
+                SwitchRow("Sound",     "Play sound on new event",  Icons.Default.VolumeUp,  sound) { vm.setNotifSound(it) }
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                SwitchRow("Vibration", "Vibrate on new event", Icons.Default.Vibration, vib) { vm.setNotifVib(it) }
+                SwitchRow("Vibration", "Vibrate on new event", Icons.Default.Vibration, vib)   { vm.setNotifVib(it) }
             }
 
             SHeader("Storage")
@@ -78,20 +101,25 @@ fun SettingsScreen(vm: SettingsViewModel) {
                         Text("$maxEvents events", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
                     }
                     Slider(sliderVal, { sliderVal = it }, valueRange = 100f..2000f, steps = 18,
-                        onValueChangeFinished = { vm.setMaxEvents(sliderVal.toInt()) }, modifier = Modifier.width(120.dp))
+                        onValueChangeFinished = { vm.setMaxEvents(sliderVal.toInt()) },
+                        modifier = Modifier.width(120.dp))
                 }
             }
 
             SHeader("About")
             SCard {
-                InfoRow("Version", "1.0.0")
-                InfoRow("Author", "UnTamedFury")
+                InfoRow("Version", "2.0.0")
+                InfoRow("Author",  "UnTamedFury")
                 InfoRow("License", "SignalNest Source License v1")
             }
 
             SHeader("Danger zone")
-            OutlinedButton(onClick = { showReset = true }, Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = cs.error)) {
+            OutlinedButton(
+                onClick  = { showReset = true },
+                modifier = Modifier.fillMaxWidth(),
+                shape    = RoundedCornerShape(12.dp),
+                colors   = ButtonDefaults.outlinedButtonColors(contentColor = cs.error),
+            ) {
                 Icon(Icons.Default.RestartAlt, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp)); Text("Reset & re-run setup")
             }
@@ -101,28 +129,48 @@ fun SettingsScreen(vm: SettingsViewModel) {
 
     if (showReset) AlertDialog(
         onDismissRequest = { showReset = false },
-        title = { Text("Reset setup?") },
-        text  = { Text("This disconnects from the server and shows onboarding again. Your local data is kept.") },
+        title   = { Text("Reset setup?") },
+        text    = { Text("This disconnects from the server and shows onboarding again. Your local data is kept.") },
         confirmButton = { TextButton({ vm.resetOnboarding(ctx); showReset = false }) { Text("Reset", color = MaterialTheme.colorScheme.error) } },
         dismissButton = { TextButton({ showReset = false }) { Text("Cancel") } },
     )
 }
 
 @Composable fun SHeader(text: String) =
-    Text(text.uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary,
+    Text(text.uppercase(), style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(top = 12.dp, bottom = 2.dp, start = 4.dp))
 
 @Composable fun SCard(content: @Composable ColumnScope.() -> Unit) =
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        colors    = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(0.dp)) { Column(Modifier.padding(16.dp), content = content) }
 
 @Composable fun SwitchRow(label: String, sub: String, icon: ImageVector, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) { Text(label, style = MaterialTheme.typography.titleMedium); Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.titleMedium)
+            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Switch(checked, onToggle)
+    }
+}
+
+@Composable fun NavRow(label: String, sub: String, icon: ImageVector, onClick: () -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Surface(onClick = onClick, color = cs.surfaceVariant, shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, Modifier.size(20.dp), tint = cs.primary)
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.titleMedium)
+                Text(sub, style = MaterialTheme.typography.bodySmall, color = cs.onSurfaceVariant)
+            }
+            Icon(Icons.AutoMirrored.Filled.ArrowForward, null, Modifier.size(16.dp), tint = cs.onSurfaceVariant)
+        }
     }
 }
 

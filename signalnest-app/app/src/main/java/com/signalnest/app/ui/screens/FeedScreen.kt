@@ -29,11 +29,12 @@ import com.signalnest.app.utils.TimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FeedScreen(vm: FeedViewModel) {
+fun FeedScreen(vm: FeedViewModel, onSearch: () -> Unit) {
     val events  by vm.events.collectAsStateWithLifecycle()
     val unread  by vm.unreadCount.collectAsStateWithLifecycle()
     val groups  by vm.groups.collectAsStateWithLifecycle()
     val cs      = MaterialTheme.colorScheme
+
     var selectedGroup by remember { mutableStateOf<String?>(null) }
     var showClear     by remember { mutableStateOf(false) }
     var expandedId    by remember { mutableStateOf<String?>(null) }
@@ -45,12 +46,15 @@ fun FeedScreen(vm: FeedViewModel) {
         topBar = {
             TopAppBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Feed")
                         if (unread > 0) Badge { Text("$unread") }
                     }
                 },
                 actions = {
+                    // Phase 2: search button
+                    IconButton(onSearch) { Icon(Icons.Default.Search, "Search") }
                     if (unread > 0) IconButton({ vm.markAllRead() }) { Icon(Icons.Default.DoneAll, "Mark all read") }
                     if (events.isNotEmpty()) IconButton({ showClear = true }) { Icon(Icons.Default.DeleteSweep, "Clear") }
                 },
@@ -60,15 +64,12 @@ fun FeedScreen(vm: FeedViewModel) {
         containerColor = cs.background,
     ) { pad ->
         Column(Modifier.fillMaxSize().padding(pad)) {
-            // Group filter chips
             if (groups.size > 1) {
-                androidx.compose.foundation.lazy.LazyRow(
+                LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    item {
-                        FilterChip(selectedGroup == null, { selectedGroup = null }, label = { Text("All") })
-                    }
+                    item { FilterChip(selectedGroup == null, { selectedGroup = null }, label = { Text("All") }) }
                     items(groups) { g ->
                         FilterChip(selectedGroup == g, { selectedGroup = g }, label = { Text(g) })
                     }
@@ -115,7 +116,7 @@ fun FeedScreen(vm: FeedViewModel) {
     if (showClear) AlertDialog(
         onDismissRequest = { showClear = false },
         title = { Text("Clear all events?") },
-        text  = { Text("This permanently deletes all ${events.size} events.") },
+        text  = { Text("Permanently deletes all ${events.size} events.") },
         confirmButton = { TextButton({ vm.clearAll(); showClear = false }) { Text("Clear", color = cs.error) } },
         dismissButton = { TextButton({ showClear = false }) { Text("Cancel") } },
     )
@@ -132,7 +133,6 @@ fun EventCard(event: Event, expanded: Boolean, onTap: () -> Unit, onPin: () -> U
         "rss"    -> Color(0xFFF59E0B)
         else     -> cs.primary
     }
-    val isSilent = event.category == "silent"
 
     Card(
         onClick   = onTap,
@@ -144,14 +144,16 @@ fun EventCard(event: Event, expanded: Boolean, onTap: () -> Unit, onPin: () -> U
         elevation = CardDefaults.cardElevation(0.dp),
     ) {
         Column(Modifier.padding(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.size(8.dp).clip(CircleShape).background(channelColor))
                 if (!event.isRead) Box(Modifier.size(6.dp).clip(CircleShape).background(cs.primary))
-                if (isSilent) Icon(Icons.Default.VolumeOff, null, Modifier.size(12.dp), tint = cs.onSurfaceVariant)
+                if (event.category == "silent") Icon(Icons.Default.VolumeOff, null, Modifier.size(12.dp), tint = cs.onSurfaceVariant)
                 if (event.isPinned) Icon(Icons.Default.PushPin, null, Modifier.size(12.dp), tint = cs.primary)
-                Text(event.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(TimeUtils.relative(event.timestamp), style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
+                Text(event.title, style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(TimeUtils.relative(event.timestamp),
+                    style = MaterialTheme.typography.labelSmall, color = cs.onSurfaceVariant)
             }
             Spacer(Modifier.height(4.dp))
             Text(event.body, style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant,
@@ -177,10 +179,11 @@ fun EventCard(event: Event, expanded: Boolean, onTap: () -> Unit, onPin: () -> U
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                         TextButton({ clip.setText(AnnotatedString(event.rawPayload.ifBlank { event.body })) }) {
-                            Icon(Icons.Default.ContentCopy, null, Modifier.size(14.dp)); Spacer(Modifier.width(4.dp)); Text("Copy")
+                            Icon(Icons.Default.ContentCopy, null, Modifier.size(14.dp))
+                            Spacer(Modifier.width(4.dp)); Text("Copy")
                         }
                         TextButton(onPin) {
-                            Icon(if (event.isPinned) Icons.Default.PushPin else Icons.Default.PushPin, null, Modifier.size(14.dp))
+                            Icon(Icons.Default.PushPin, null, Modifier.size(14.dp))
                             Spacer(Modifier.width(4.dp)); Text(if (event.isPinned) "Unpin" else "Pin")
                         }
                         TextButton(onDelete) {

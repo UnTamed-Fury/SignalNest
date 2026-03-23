@@ -13,11 +13,16 @@ signalnest-app/local.properties
 *.dex
 *.class
 
-# Keystore files - NEVER commit
+# =====================
+# Keystore — NEVER commit these
+# =====================
 *.jks
 *.keystore
 *.p12
 keystore.properties
+ks_b64.txt
+*_b64.txt
+signalnest.jks
 
 # =====================
 # Node.js / pnpm

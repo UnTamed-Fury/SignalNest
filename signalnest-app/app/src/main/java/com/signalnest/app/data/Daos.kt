@@ -1,15 +1,24 @@
 package com.signalnest.app.data
 
 import androidx.room.*
-import com.signalnest.app.data.models.Event
-import com.signalnest.app.data.models.Note
-import com.signalnest.app.data.models.RssFeed
-import com.signalnest.app.data.models.Todo
+import com.signalnest.app.data.models.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao interface EventDao {
     @Query("SELECT * FROM events ORDER BY isPinned DESC, timestamp DESC LIMIT :limit")
     fun getRecent(limit: Int = 500): Flow<List<Event>>
+
+    // Phase 2: full-text search across title + body + source + group
+    @Query("""
+        SELECT * FROM events
+        WHERE lower(title) LIKE '%' || lower(:q) || '%'
+           OR lower(body)  LIKE '%' || lower(:q) || '%'
+           OR lower(source)LIKE '%' || lower(:q) || '%'
+           OR lower(`group`)LIKE '%' || lower(:q) || '%'
+        ORDER BY isPinned DESC, timestamp DESC
+        LIMIT 200
+    """)
+    fun search(q: String): Flow<List<Event>>
 
     @Query("SELECT COUNT(*) FROM events WHERE isRead = 0")
     fun unreadCount(): Flow<Int>
@@ -64,4 +73,15 @@ import kotlinx.coroutines.flow.Flow
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(f: RssFeed): Long
     @Update suspend fun update(f: RssFeed)
     @Delete suspend fun delete(f: RssFeed)
+}
+
+@Dao interface SnrlRuleDao {
+    @Query("SELECT * FROM snrl_rules ORDER BY `order` ASC")
+    fun getAll(): Flow<List<SnrlRule>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insert(r: SnrlRule): Long
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun insertAll(rules: List<SnrlRule>)
+    @Update suspend fun update(r: SnrlRule)
+    @Delete suspend fun delete(r: SnrlRule)
+    @Query("DELETE FROM snrl_rules") suspend fun deleteAll()
 }
