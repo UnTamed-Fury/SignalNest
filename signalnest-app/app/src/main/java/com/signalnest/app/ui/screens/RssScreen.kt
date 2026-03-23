@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,8 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.data.models.RssFeed
-import com.signalnest.app.ui.viewmodels.RssViewModel
+import fury.signalnest.app.data.models.RssFeed
+import fury.signalnest.app.ui.viewmodels.RssViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

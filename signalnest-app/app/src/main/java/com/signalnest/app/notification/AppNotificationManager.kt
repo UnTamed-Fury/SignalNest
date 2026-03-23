@@ -1,4 +1,4 @@
-package com.signalnest.app.notification
+package fury.signalnest.app.notification
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -8,7 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.media.RingtoneManager
 import androidx.core.app.NotificationCompat
-import com.signalnest.app.MainActivity
+import fury.signalnest.app.MainActivity
 
 object Ch {
     const val EVENTS  = "sn_events"

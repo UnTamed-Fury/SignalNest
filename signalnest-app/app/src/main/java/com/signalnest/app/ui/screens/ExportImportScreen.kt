@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import android.content.Intent
 import android.net.Uri
@@ -20,8 +20,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.ui.viewmodels.ExportState
-import com.signalnest.app.ui.viewmodels.ExportViewModel
+import fury.signalnest.app.ui.viewmodels.ExportState
+import fury.signalnest.app.ui.viewmodels.ExportViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 

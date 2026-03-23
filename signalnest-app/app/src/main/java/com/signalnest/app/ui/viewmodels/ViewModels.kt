@@ -1,16 +1,16 @@
-package com.signalnest.app.ui.viewmodels
+package fury.signalnest.app.ui.viewmodels
 
 import android.app.Application
 import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.signalnest.app.SignalNestApp
-import com.signalnest.app.data.ExportManager
-import com.signalnest.app.data.ImportResult
-import com.signalnest.app.data.models.*
-import com.signalnest.app.network.*
-import com.signalnest.app.server.ConnectionService
+import fury.signalnest.app.SignalNestApp
+import fury.signalnest.app.data.ExportManager
+import fury.signalnest.app.data.ImportResult
+import fury.signalnest.app.data.models.*
+import fury.signalnest.app.network.*
+import fury.signalnest.app.server.ConnectionService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

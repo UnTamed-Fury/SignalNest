@@ -1,4 +1,4 @@
-package com.signalnest.app.network
+package fury.signalnest.app.network
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -1,9 +1,9 @@
-package com.signalnest.app.server
+package fury.signalnest.app.server
 
 import android.util.Log
-import com.signalnest.app.SignalNestApp
-import com.signalnest.app.data.models.Event
-import com.signalnest.app.notification.AppNotificationManager
+import fury.signalnest.app.SignalNestApp
+import fury.signalnest.app.data.models.Event
+import fury.signalnest.app.notification.AppNotificationManager
 import fi.iki.elonen.NanoHTTPD
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first

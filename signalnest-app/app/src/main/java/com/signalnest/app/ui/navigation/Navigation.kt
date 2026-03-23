@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.navigation
+package fury.signalnest.app.ui.navigation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*

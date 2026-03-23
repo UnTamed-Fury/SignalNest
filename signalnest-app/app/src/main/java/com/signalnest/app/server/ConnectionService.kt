@@ -1,12 +1,12 @@
-package com.signalnest.app.server
+package fury.signalnest.app.server
 
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import com.signalnest.app.SignalNestApp
-import com.signalnest.app.notification.AppNotificationManager
+import fury.signalnest.app.SignalNestApp
+import fury.signalnest.app.notification.AppNotificationManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 

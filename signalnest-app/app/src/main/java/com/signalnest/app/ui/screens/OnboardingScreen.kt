@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.signalnest.app.ui.viewmodels.OnboardState
-import com.signalnest.app.ui.viewmodels.OnboardingViewModel
+import fury.signalnest.app.ui.viewmodels.OnboardState
+import fury.signalnest.app.ui.viewmodels.OnboardingViewModel
 
 @Composable
 fun OnboardingScreen(vm: OnboardingViewModel = viewModel()) {

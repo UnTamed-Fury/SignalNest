@@ -1,4 +1,4 @@
-package com.signalnest.app.data.models
+package fury.signalnest.app.data.models
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

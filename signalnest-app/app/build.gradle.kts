@@ -6,16 +6,16 @@ plugins {
 }
 
 android {
-    namespace         = "com.signalnest.app"
+    namespace         = "fury.signalnest.app"
     compileSdk        = 34
     buildToolsVersion = "34.0.0"
 
     defaultConfig {
-        applicationId = "com.signalnest.app"
+        applicationId = "fury.signalnest.app"
         minSdk        = 29
         targetSdk     = 34
-        versionCode   = 1
-        versionName   = "1.0.0"
+        versionCode   = 2
+        versionName   = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
     }

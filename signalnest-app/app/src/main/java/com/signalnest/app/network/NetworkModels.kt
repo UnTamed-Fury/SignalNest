@@ -1,4 +1,4 @@
-package com.signalnest.app.network
+package fury.signalnest.app.network
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement

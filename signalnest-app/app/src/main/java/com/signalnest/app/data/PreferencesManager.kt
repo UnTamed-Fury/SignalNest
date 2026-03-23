@@ -1,4 +1,4 @@
-package com.signalnest.app.data
+package fury.signalnest.app.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore

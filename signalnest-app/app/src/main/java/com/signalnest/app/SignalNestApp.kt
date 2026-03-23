@@ -1,10 +1,10 @@
-package com.signalnest.app
+package fury.signalnest.app
 
 import android.app.Application
-import com.signalnest.app.data.AppDatabase
-import com.signalnest.app.data.PreferencesManager
-import com.signalnest.app.notification.AppNotificationManager
-import com.signalnest.app.worker.TodoAlarmWorker
+import fury.signalnest.app.data.AppDatabase
+import fury.signalnest.app.data.PreferencesManager
+import fury.signalnest.app.notification.AppNotificationManager
+import fury.signalnest.app.worker.TodoAlarmWorker
 
 class SignalNestApp : Application() {
     val db    by lazy { AppDatabase.getInstance(this) }

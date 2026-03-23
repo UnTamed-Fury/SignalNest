@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

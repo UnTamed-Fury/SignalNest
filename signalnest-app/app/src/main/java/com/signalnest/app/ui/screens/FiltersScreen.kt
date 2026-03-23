@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -20,9 +20,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.data.models.SnrlRule
-import com.signalnest.app.ui.viewmodels.RuleOp
-import com.signalnest.app.ui.viewmodels.RulesViewModel
+import fury.signalnest.app.data.models.SnrlRule
+import fury.signalnest.app.ui.viewmodels.RuleOp
+import fury.signalnest.app.ui.viewmodels.RulesViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -179,7 +179,7 @@ private fun RuleCard(rule: SnrlRule, onToggle: () -> Unit, onEdit: () -> Unit, o
 @Composable
 private fun RuleSheet(
     existing: SnrlRule?,
-    validate: com.signalnest.app.network.ValidateResponse?,
+    validate: fury.signalnest.app.network.ValidateResponse?,
     onValidate: (String) -> Unit,
     onClearValidate: () -> Unit,
     onDismiss: () -> Unit,
@@ -217,18 +217,20 @@ private fun RuleSheet(
             // Validate result
             AnimatedVisibility(validate != null) {
                 val v = validate ?: return@AnimatedVisibility
-                val color = if (v.ok) cs.primaryContainer else cs.errorContainer
-                val tint  = if (v.ok) cs.onPrimaryContainer else cs.onErrorContainer
+                val ok = (v as? fury.signalnest.app.network.ValidateResponse)?.ok == true
+                val color = if (ok) cs.primaryContainer else cs.errorContainer
+                val tint  = if (ok) cs.onPrimaryContainer else cs.onErrorContainer
                 Surface(color = color, shape = RoundedCornerShape(10.dp), modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                     Column(Modifier.padding(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(if (v.ok) Icons.Default.CheckCircle else Icons.Default.Error,
+                            Icon(if (ok) Icons.Default.CheckCircle else Icons.Default.Error,
                                 null, Modifier.size(16.dp), tint = tint)
                             Spacer(Modifier.width(8.dp))
-                            Text(if (v.ok) "Valid rule" else v.error ?: "Invalid",
+                            Text(if (ok) "Valid rule" else "Invalid",
                                 color = tint, style = MaterialTheme.typography.bodySmall)
                         }
-                        v.warnings.forEach { w ->
+                        val warnings = (v as? fury.signalnest.app.network.ValidateResponse)?.warnings ?: emptyList()
+                        warnings.forEach { w ->
                             Text("⚠ $w", color = tint.copy(alpha = 0.7f),
                                 style = MaterialTheme.typography.labelSmall,
                                 modifier = Modifier.padding(top = 4.dp))

@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
@@ -23,9 +23,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.data.models.Event
-import com.signalnest.app.ui.viewmodels.FeedViewModel
-import com.signalnest.app.utils.TimeUtils
+import fury.signalnest.app.data.models.Event
+import fury.signalnest.app.ui.viewmodels.FeedViewModel
+import fury.signalnest.app.utils.TimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

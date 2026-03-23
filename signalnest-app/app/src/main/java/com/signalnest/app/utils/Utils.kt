@@ -1,4 +1,4 @@
-package com.signalnest.app.utils
+package fury.signalnest.app.utils
 
 import android.content.Context
 import android.net.wifi.WifiManager

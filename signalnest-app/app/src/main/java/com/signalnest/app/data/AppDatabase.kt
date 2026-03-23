@@ -1,8 +1,8 @@
-package com.signalnest.app.data
+package fury.signalnest.app.data
 
 import android.content.Context
 import androidx.room.*
-import com.signalnest.app.data.models.*
+import fury.signalnest.app.data.models.*
 
 @Database(
     entities     = [Event::class, Note::class, Todo::class, RssFeed::class, SnrlRule::class],

@@ -1,4 +1,4 @@
-package com.signalnest.app
+package fury.signalnest.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -7,10 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.signalnest.app.ui.screens.MainScaffold
-import com.signalnest.app.ui.screens.OnboardingScreen
-import com.signalnest.app.ui.theme.SignalNestTheme
-import com.signalnest.app.ui.viewmodels.SettingsViewModel
+import fury.signalnest.app.ui.screens.MainScaffold
+import fury.signalnest.app.ui.screens.OnboardingScreen
+import fury.signalnest.app.ui.theme.SignalNestTheme
+import fury.signalnest.app.ui.viewmodels.SettingsViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

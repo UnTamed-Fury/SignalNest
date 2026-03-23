@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -18,9 +18,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
-import com.signalnest.app.server.ConnectionService
-import com.signalnest.app.ui.navigation.*
-import com.signalnest.app.ui.viewmodels.*
+import fury.signalnest.app.server.ConnectionService
+import fury.signalnest.app.ui.navigation.*
+import fury.signalnest.app.ui.viewmodels.*
 
 @Composable
 fun MainScaffold(settingsVm: SettingsViewModel) {

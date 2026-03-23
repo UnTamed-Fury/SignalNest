@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.theme
+package fury.signalnest.app.ui.theme
 
 import android.app.Activity
 import android.os.Build

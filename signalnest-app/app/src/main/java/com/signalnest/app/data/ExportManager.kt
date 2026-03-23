@@ -1,8 +1,8 @@
-package com.signalnest.app.data
+package fury.signalnest.app.data
 
 import android.content.Context
 import android.net.Uri
-import com.signalnest.app.data.models.*
+import fury.signalnest.app.data.models.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable

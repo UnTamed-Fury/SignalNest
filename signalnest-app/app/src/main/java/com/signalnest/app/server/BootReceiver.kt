@@ -1,9 +1,9 @@
-package com.signalnest.app.server
+package fury.signalnest.app.server
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.signalnest.app.SignalNestApp
+import fury.signalnest.app.SignalNestApp
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.first
 

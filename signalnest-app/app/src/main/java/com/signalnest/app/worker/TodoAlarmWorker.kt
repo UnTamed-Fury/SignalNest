@@ -1,9 +1,9 @@
-package com.signalnest.app.worker
+package fury.signalnest.app.worker
 
 import android.content.Context
 import androidx.work.*
-import com.signalnest.app.SignalNestApp
-import com.signalnest.app.notification.AppNotificationManager
+import fury.signalnest.app.SignalNestApp
+import fury.signalnest.app.notification.AppNotificationManager
 import java.util.concurrent.TimeUnit
 
 class TodoAlarmWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {

@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -16,9 +16,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.data.models.Note
-import com.signalnest.app.ui.viewmodels.NotesViewModel
-import com.signalnest.app.utils.TimeUtils
+import fury.signalnest.app.data.models.Note
+import fury.signalnest.app.ui.viewmodels.NotesViewModel
+import fury.signalnest.app.utils.TimeUtils
 
 private val noteColors = listOf(
     Color(0xFF1E2A3A), Color(0xFF1A2E2A), Color(0xFF2E1A2E),

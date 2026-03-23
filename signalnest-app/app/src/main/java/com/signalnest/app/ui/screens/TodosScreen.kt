@@ -1,4 +1,4 @@
-package com.signalnest.app.ui.screens
+package fury.signalnest.app.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,9 +15,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.signalnest.app.data.models.Todo
-import com.signalnest.app.ui.viewmodels.TodosViewModel
-import com.signalnest.app.utils.TimeUtils
+import fury.signalnest.app.data.models.Todo
+import fury.signalnest.app.ui.viewmodels.TodosViewModel
+import fury.signalnest.app.utils.TimeUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

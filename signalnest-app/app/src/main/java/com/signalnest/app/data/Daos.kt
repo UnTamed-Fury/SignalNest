@@ -1,7 +1,7 @@
-package com.signalnest.app.data
+package fury.signalnest.app.data
 
 import androidx.room.*
-import com.signalnest.app.data.models.*
+import fury.signalnest.app.data.models.*
 import kotlinx.coroutines.flow.Flow
 
 @Dao interface EventDao {
