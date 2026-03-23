@@ -69,10 +69,14 @@ jobs:
           cd signalnest-app
           chmod +x gradlew
           ./gradlew assembleDebug \
-            --no-daemon \
+            --daemon \
             --parallel \
             --build-cache \
-            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m"
+            --configuration-cache \
+            -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC" \
+            -Dorg.gradle.workers.max=4 \
+            -Dkotlin.incremental=true \
+            -Dorg.gradle.parallel=true
 
       - uses: actions/upload-artifact@v4
         with:
